@@ -220,8 +220,18 @@ function checkStageBattleSetup(data: GameData): DataIssue[] {
       occupied.add(key);
     });
 
+    // 패배 판정은 "지정 무장이 전장에 없다"이므로, 출진할 수 없는 무장을 지목하면
+    // 전투가 시작하자마자 패배가 된다. 명단이 있는 스테이지에서만 검사한다(M3부터는 캠페인 편성이 명단을 대신한다).
+    const roster = stage.deployment.roster;
     stage.defeat.officerIds.forEach((officerId, index) => {
-      requireOfficer(`defeat.officerIds[${index}]`, officerId);
+      const path = `defeat.officerIds[${index}]`;
+      requireOfficer(path, officerId);
+
+      if (roster && !roster.some((entry) => entry.officerId === officerId)) {
+        issues.push(
+          issue(source, path, `패배 조건 무장 '${officerId}'가 출진 명단에 없다`),
+        );
+      }
     });
   }
 

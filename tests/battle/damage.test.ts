@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { physicalDamage } from "../../src/core/battle/damage";
+import { damageRange, physicalDamage } from "../../src/core/battle/damage";
 import { createRng } from "../../src/core/rng";
 import type { Family } from "../../src/core/data/schemas";
 import { makeBattle, type BattleFixtureOptions, type UnitSpec } from "./fixtures";
@@ -180,6 +180,43 @@ describe("physicalDamage — 결정론 (VER-07)", () => {
       expect(damage).toBeGreaterThanOrEqual(Math.floor(fixed * 0.9));
       expect(damage).toBeLessThanOrEqual(Math.ceil(fixed * 1.1));
     }
+  });
+});
+
+describe("damageRange — 예상 데미지 (FR-18)", () => {
+  const setup = () =>
+    makeBattle(PLAIN, [at("foot", "player", [0, 0]), at("foot2", "enemy", [1, 0])]);
+
+  it("난수 폭의 양 끝을 돌려준다", () => {
+    const { ctx, state } = setup();
+    const [min, max] = damageRange(ctx, state.units[0]!, state.units[1]!);
+
+    // 원시 데미지 296.25에 난수 폭 0.9~1.1을 곱해 반올림한다(고정 1.0이면 296)
+    expect(min).toBe(Math.round(296.25 * 0.9)); // 267
+    expect(max).toBe(Math.round(296.25 * 1.1)); // 326
+    expect(min).toBeLessThan(max);
+  });
+
+  it("실제 공격 결과가 언제나 예상 범위 안에 들어온다 — 같은 공식을 쓴다", () => {
+    const { ctx, state } = setup();
+    const [attacker, defender] = [state.units[0]!, state.units[1]!];
+    const [min, max] = damageRange(ctx, attacker, defender);
+    const rng = createRng(2026);
+
+    for (let i = 0; i < 50; i += 1) {
+      const damage = physicalDamage(ctx, attacker, defender, rng);
+      expect(damage).toBeGreaterThanOrEqual(min);
+      expect(damage).toBeLessThanOrEqual(max);
+    }
+  });
+
+  it("남은 병력보다 큰 값은 예상하지 않는다", () => {
+    const { ctx, state } = makeBattle(PLAIN, [
+      at("foot", "player", [0, 0]),
+      { ...at("foot2", "enemy", [1, 0]), hp: 5 },
+    ]);
+
+    expect(damageRange(ctx, state.units[0]!, state.units[1]!)).toEqual([5, 5]);
   });
 });
 

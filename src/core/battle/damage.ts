@@ -22,12 +22,15 @@ function affinityModifier(ctx: BattleContext, attacker: Unit, defender: Unit): n
   );
 }
 
+/** 데미지 계산이 난수원에서 실제로 쓰는 부분. 예상 데미지는 난수를 소비하지 않고 폭의 양 끝을 넣는다. */
+type Roller = Pick<Rng, "range">;
+
 /** 공격 한 번이 깎는 병력. 남은 병력을 넘지 않고 최소 데미지 아래로도 내려가지 않는다. */
 export function physicalDamage(
   ctx: BattleContext,
   attacker: Unit,
   defender: Unit,
-  rng: Rng,
+  rng: Roller,
 ): number {
   const config = ctx.data.combatConfig;
   const attackerOfficer = officerOf(ctx, attacker);
@@ -47,4 +50,20 @@ export function physicalDamage(
   const rolled = Math.round(raw * rng.range(config.damageJitter.min, config.damageJitter.max));
 
   return Math.min(Math.max(rolled, config.minDamage), defender.hp);
+}
+
+/** 난수를 소비하지 않고 폭의 한쪽 끝만 내는 고정 난수원. `0`이면 최솟값, `1`이면 최댓값. */
+const fixedRoll = (fraction: number): Roller => ({
+  range: (min, max) => min + (max - min) * fraction,
+});
+
+/**
+ * 공격이 낼 수 있는 데미지의 폭 `[최소, 최대]`(FR-18의 예상 데미지 표시).
+ * 실제 공격과 같은 `physicalDamage`를 부르므로 공식이 갈라질 수 없다 — 난수만 양 끝으로 고정한다.
+ */
+export function damageRange(ctx: BattleContext, attacker: Unit, defender: Unit): [number, number] {
+  return [
+    physicalDamage(ctx, attacker, defender, fixedRoll(0)),
+    physicalDamage(ctx, attacker, defender, fixedRoll(1)),
+  ];
 }

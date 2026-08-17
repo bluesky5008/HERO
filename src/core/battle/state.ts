@@ -19,7 +19,9 @@ export interface Unit {
   hpMax: number;
   morale: number;
   pos: Pos;
-  /** 이번 페이즈의 행동을 마쳤는가 */
+  /** 이번 페이즈의 이동을 썼는가. 페이즈당 이동 1회 + 행동 1회다([상세 스펙 §1.1]). */
+  moved: boolean;
+  /** 이번 페이즈의 행동을 마쳤는가. 행동 후에는 이동도 할 수 없다. */
   acted: boolean;
 }
 
@@ -138,6 +140,7 @@ export function createBattleState(
         hpMax,
         morale: placement.morale,
         pos: [x, y],
+        moved: false,
         acted: false,
       });
     }

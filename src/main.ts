@@ -1,7 +1,7 @@
 import { Application } from "pixi.js";
 import { readBrowserGameData } from "./browserData";
 import { formatIssues, loadGameData } from "./core/data/loader";
-import { createTilemapLayer } from "./render/TilemapRenderer";
+import { startBattleScene } from "./scenes/BattleScene";
 
 const BACKGROUND = "#14161a";
 
@@ -41,16 +41,16 @@ async function boot(): Promise<void> {
 
   const container = document.getElementById("app");
   if (!container) throw new Error("#app 요소가 없다");
-  container.appendChild(app.canvas);
 
-  const tilemap = createTilemapLayer(stage, data.terrain, data.config);
-  tilemap.x = Math.round((data.config.logicalWidth - stage.map.width * data.config.tileSize) / 2);
-  tilemap.y = Math.round((data.config.logicalHeight - stage.map.height * data.config.tileSize) / 2);
-  app.stage.addChild(tilemap);
+  // 캔버스와 HUD가 같은 상자를 공유해야 오버레이 좌표가 화면과 어긋나지 않는다.
+  const screen = document.createElement("div");
+  screen.id = "screen";
+  screen.style.width = `${data.config.logicalWidth}px`;
+  screen.style.height = `${data.config.logicalHeight}px`;
+  screen.appendChild(app.canvas);
+  container.appendChild(screen);
 
-  console.info(
-    `${stage.name} (${stage.map.width}×${stage.map.height}) 렌더 완료 — 지형 ${data.terrain.length}종, 병과 ${data.classes.length}종`,
-  );
+  startBattleScene({ app, data, stage, hudParent: screen });
 }
 
 boot().catch((error: unknown) => {

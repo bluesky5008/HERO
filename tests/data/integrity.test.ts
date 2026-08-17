@@ -190,6 +190,16 @@ describe("loadGameData — 전투 데이터 참조 무결성", () => {
     expect(report(loadGameData(raw).issues)).toContain("no_such_officer");
   });
 
+  it("패배 조건 무장이 출진 명단에 없으면 보고한다", () => {
+    // 출진할 수 없는 무장을 패배 조건에 두면 전투가 시작하자마자 패배로 판정된다.
+    const raw = validRawGameData();
+    const stage = structuredClone(validStage);
+    stage.defeat.officerIds = ["deng_mao"]; // 적 무장 — 출진 명단에 없다
+    raw.stages = { "stage-test.json": stage };
+
+    expect(report(loadGameData(raw).issues)).toContain("출진 명단");
+  });
+
   it("적 부대 좌표가 맵 밖이면 보고한다", () => {
     const raw = validRawGameData();
     const stage = structuredClone(validStage);

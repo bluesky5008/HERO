@@ -38,9 +38,11 @@ const TERRAIN = [
 
 const CLASSES = [
   { id: "sword_soldier", name: "단병", family: "infantry", movement: 5, attackMod: 8, defenseMod: 10 },
-  { id: "spear_soldier", name: "장병", family: "infantry", movement: 5, attackMod: 12, defenseMod: 14, movementRules: { forbidden: [], halved: ["forest"] } },
+  { id: "spear_soldier", name: "장병", family: "infantry", movement: 5, attackMod: 12, defenseMod: 14, movementRules: { forbidden: [], halved: ["forest"] }, attackRange: { min: 1, max: 1, directions: 8 as const } },
   { id: "light_cavalry", name: "경기병", family: "cavalry", movement: 7, attackMod: 12, defenseMod: 6, movementRules: { forbidden: ["forest"], halved: [] } },
   { id: "archer", name: "궁병", family: "archer", movement: 5, attackMod: 10, defenseMod: 6, attackRange: { min: 1, max: 2, directions: 4 as const } },
+  // 인접한 적을 칠 수 없는 병과 — 최소 사거리가 실제로 걸리는지 보려면 min > 1인 데이터가 있어야 한다.
+  { id: "catapult", name: "발석차", family: "archer", movement: 4, attackMod: 16, defenseMod: 4, attackRange: { min: 2, max: 3, directions: 4 as const } },
   { id: "music_band", name: "군악대", family: "band", movement: 4, attackMod: 4, defenseMod: 8 },
 ].map((cls) => ({
   tier: 1,
@@ -67,6 +69,7 @@ const OFFICERS = [
   { id: "spear", name: "장병 장수", classId: "spear_soldier" },
   { id: "horse", name: "기병 장수", classId: "light_cavalry" },
   { id: "bow", name: "궁병 장수", classId: "archer" },
+  { id: "siege", name: "발석차 장수", classId: "catapult" },
   { id: "band", name: "군악대 장수", classId: "music_band" },
 ].map((officer) => ({
   war: 50,
@@ -173,6 +176,7 @@ export function makeBattle(
       hpMax,
       morale: spec.morale ?? 100,
       pos: spec.pos,
+      moved: false,
       acted: false,
     };
   });

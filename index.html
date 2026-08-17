@@ -29,6 +29,92 @@
         line-height: 1.5;
         color: #ff9d9d;
       }
+      /* 캔버스와 HUD를 같은 상자에 겹쳐 오버레이가 화면 밖으로 어긋나지 않게 한다(DES-06). */
+      #screen {
+        position: relative;
+      }
+      .hud {
+        position: absolute;
+        inset: 0;
+        /* 오버레이가 캔버스 입력을 가리지 않게 한다. 눌러야 하는 메뉴만 되살린다. */
+        pointer-events: none;
+        font-size: 0.95rem;
+      }
+      .hud > * {
+        position: absolute;
+      }
+      .hud [hidden] {
+        display: none;
+      }
+      .hud-status,
+      .hud-info,
+      .hud-forecast {
+        padding: 0.35rem 0.7rem;
+        border-radius: 4px;
+        background: rgba(10, 12, 16, 0.72);
+      }
+      .hud-status {
+        top: 12px;
+        left: 12px;
+      }
+      .hud-forecast:not(:empty) {
+        top: 12px;
+        right: 12px;
+        color: #ffcc80;
+      }
+      .hud-info {
+        left: 12px;
+        bottom: 44px;
+      }
+      .hud-info:empty,
+      .hud-forecast:empty {
+        display: none;
+      }
+      .hud-info[data-side="enemy"] {
+        color: #ef9a9a;
+      }
+      .hud-info[data-side="player"] {
+        color: #9fd8f7;
+      }
+      .hud-help {
+        left: 12px;
+        bottom: 12px;
+        font-size: 0.8rem;
+        opacity: 0.55;
+      }
+      .hud-menu {
+        right: 12px;
+        bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        pointer-events: auto;
+      }
+      .hud-menu-item {
+        min-width: 6rem;
+        padding: 0.5rem 1rem;
+        border: 1px solid #4a5568;
+        border-radius: 4px;
+        background: rgba(18, 22, 30, 0.92);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      .hud-menu-item:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .hud-menu-item.is-cursor {
+        border-color: #ffd54f;
+      }
+      .hud-result {
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 3.5rem;
+        font-weight: bold;
+        text-shadow: 0 2px 12px #000;
+      }
     </style>
   </head>
   <body>
