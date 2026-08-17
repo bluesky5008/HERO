@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { formatIssues, loadGameData } from "../../src/core/data/loader";
-import { validAnimationSet, validClass, validRawGameData, validSprite } from "./fixtures";
+import {
+  validAnimationSet,
+  validClass,
+  validOfficer,
+  validRawGameData,
+  validSprite,
+  validStage,
+} from "./fixtures";
 
 /**
  * AC-01 인수 테스트: 존재하지 않는 ID 참조 또는 스프라이트 매핑 누락을 데이터에 넣으면
@@ -108,14 +115,9 @@ describe("loadGameData — 참조 무결성 (AC-01)", () => {
 
   it("스테이지 타일이 정의되지 않은 지형을 참조하면 보고한다", () => {
     const raw = validRawGameData();
-    raw.stages = {
-      "stage-test.json": {
-        id: "stage-test",
-        name: "테스트 스테이지",
-        map: { width: 2, height: 2, tiles: [["plain", "swamp"], ["plain", "plain"]] },
-        weather: "clear",
-      },
-    };
+    const stage = structuredClone(validStage);
+    stage.map.tiles[0] = ["plain", "swamp", "plain"];
+    raw.stages = { "stage-test.json": stage };
 
     const issues = loadGameData(raw).issues;
 
@@ -141,5 +143,80 @@ describe("loadGameData — 참조 무결성 (AC-01)", () => {
     raw.animations = {};
 
     expect(loadGameData(raw).issues.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("loadGameData — 전투 데이터 참조 무결성", () => {
+  it("무장이 존재하지 않는 병과를 참조하면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.officers = [{ ...validOfficer, classId: "no_such_class" }];
+
+    const issues = loadGameData(raw).issues;
+
+    expect(report(issues)).toContain("no_such_class");
+  });
+
+  it("무장 ID가 중복되면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.officers = [{ ...validOfficer }, { ...validOfficer, name: "다른 이름" }];
+
+    expect(report(loadGameData(raw).issues)).toContain("liu_bei");
+  });
+
+  it("적 부대가 존재하지 않는 무장을 참조하면 보고한다", () => {
+    const raw = validRawGameData();
+    const stage = structuredClone(validStage);
+    stage.enemies = [{ officerId: "no_such_officer", level: 5, pos: [1, 0] }];
+    raw.stages = { "stage-test.json": stage };
+
+    expect(report(loadGameData(raw).issues)).toContain("no_such_officer");
+  });
+
+  it("출진 명단이 존재하지 않는 무장을 참조하면 보고한다", () => {
+    const raw = validRawGameData();
+    const stage = structuredClone(validStage);
+    stage.deployment.roster = [{ officerId: "no_such_officer", level: 5 }];
+    raw.stages = { "stage-test.json": stage };
+
+    expect(report(loadGameData(raw).issues)).toContain("no_such_officer");
+  });
+
+  it("패배 조건이 존재하지 않는 무장을 지목하면 보고한다", () => {
+    const raw = validRawGameData();
+    const stage = structuredClone(validStage);
+    stage.defeat.officerIds = ["no_such_officer"];
+    raw.stages = { "stage-test.json": stage };
+
+    expect(report(loadGameData(raw).issues)).toContain("no_such_officer");
+  });
+
+  it("적 부대 좌표가 맵 밖이면 보고한다", () => {
+    const raw = validRawGameData();
+    const stage = structuredClone(validStage);
+    stage.enemies = [{ officerId: "deng_mao", level: 5, pos: [9, 0] }];
+    raw.stages = { "stage-test.json": stage };
+
+    expect(report(loadGameData(raw).issues)).toContain("enemies[0]");
+  });
+
+  it("배치 구역 좌표가 맵 밖이면 보고한다", () => {
+    const raw = validRawGameData();
+    const stage = structuredClone(validStage);
+    stage.deployment.zone[0] = [0, 9];
+    raw.stages = { "stage-test.json": stage };
+
+    expect(report(loadGameData(raw).issues)).toContain("deployment.zone[0]");
+  });
+
+  it("적 부대가 같은 칸에 겹치면 보고한다", () => {
+    const raw = validRawGameData();
+    const stage = structuredClone(validStage);
+    stage.enemies = [
+      { officerId: "deng_mao", level: 5, pos: [1, 0] },
+      { officerId: "liu_bei", level: 5, pos: [1, 0] },
+    ];
+    raw.stages = { "stage-test.json": stage };
+
+    expect(report(loadGameData(raw).issues)).toContain("[1, 0]");
   });
 });

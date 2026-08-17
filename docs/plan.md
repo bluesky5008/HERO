@@ -11,8 +11,8 @@
 ## 요약
 
 - 목적: 승인된 기준선 v1을 마일스톤 단위로 구현하기 위한 저장소 현행 계획. 현재 사이클은 **M0 뼈대**다.
-- 현재 결론 또는 상태: **M0 사이클 완료**(TASK-01~09, 검증 4/4 성공, [기록](./work/20260817-m0-skeleton/work-log.md)). **M1 사이클 계획 수립 완료, 구현 미착수**(TASK-10~20).
-- 다음 행동: TASK-10(결정론적 RNG)부터 순서대로 구현한다. 재개 절차는 [M1 작업 기록의 인계](./work/20260817-m1-battle-prototype/work-log.md#인계)를 따른다.
+- 현재 결론 또는 상태: **M0 사이클 완료**(TASK-01~09, 검증 4/4 성공, [기록](./work/20260817-m0-skeleton/work-log.md)). **M1 사이클 구현 중**(TASK-10~14 완료, TASK-15~20 남음).
+- 다음 행동: TASK-15(커맨드 적용)부터 순서대로 구현한다. 재개 절차는 [M1 작업 기록의 인계](./work/20260817-m1-battle-prototype/work-log.md#인계)를 따른다.
 
 ## 문서 연결
 
@@ -47,12 +47,12 @@
 [✓] [작업] 20260817-m0-skeleton — M0 뼈대 ................ completed (9/9)
     └─ 상세 트리 스냅숏: work-log.md의 계획 트리 절
 
-[▶] [작업] 20260817-m1-battle-prototype — M1 전투 프로토타입 ... in-progress (0/11)
-    ├─ [ ] TASK-10 구현: 결정론적 RNG
-    ├─ [ ] TASK-11 구현: 전투 데이터 확장(무장·전투 상수·스테이지)
-    ├─ [ ] TASK-12 구현: 전투 상태 구성            depends: TASK-11
-    ├─ [ ] TASK-13 구현: 이동 범위 계산            depends: TASK-12
-    ├─ [ ] TASK-14 구현: 데미지 공식·상성          depends: TASK-10, TASK-11
+[▶] [작업] 20260817-m1-battle-prototype — M1 전투 프로토타입 ... in-progress (5/11)
+    ├─ [✓] TASK-10 구현: 결정론적 RNG
+    ├─ [✓] TASK-11 구현: 전투 데이터 확장(무장·전투 상수·스테이지)
+    ├─ [✓] TASK-12 구현: 전투 상태 구성            depends: TASK-11
+    ├─ [✓] TASK-13 구현: 이동 범위 계산            depends: TASK-12
+    ├─ [✓] TASK-14 구현: 데미지 공식·상성          depends: TASK-10, TASK-11
     ├─ [ ] TASK-15 구현: 커맨드 적용               depends: TASK-13, TASK-14
     ├─ [ ] TASK-16 구현: 턴 진행·승패 판정         depends: TASK-15
     ├─ [ ] TASK-17 구현: 1단계 적 AI               depends: TASK-15
@@ -64,13 +64,13 @@
 ```mermaid
 flowchart TD
     M0["M0 뼈대 (9/9)<br/>20260817-m0-skeleton"]:::done
-    M1["M1 전투 프로토타입 (0/11)<br/>20260817-m1-battle-prototype"]:::active
+    M1["M1 전투 프로토타입 (5/11)<br/>20260817-m1-battle-prototype"]:::active
     M0 -. depends .-> M1
-    M1 --> T10["TASK-10 결정론적 RNG"]:::todo
-    M1 --> T11["TASK-11 전투 데이터 확장"]:::todo
-    M1 --> T12["TASK-12 전투 상태 구성"]:::todo
-    M1 --> T13["TASK-13 이동 범위 계산"]:::todo
-    M1 --> T14["TASK-14 데미지 공식·상성"]:::todo
+    M1 --> T10["TASK-10 결정론적 RNG"]:::done
+    M1 --> T11["TASK-11 전투 데이터 확장"]:::done
+    M1 --> T12["TASK-12 전투 상태 구성"]:::done
+    M1 --> T13["TASK-13 이동 범위 계산"]:::done
+    M1 --> T14["TASK-14 데미지 공식·상성"]:::done
     M1 --> T15["TASK-15 커맨드 적용"]:::todo
     M1 --> T16["TASK-16 턴 진행·승패 판정"]:::todo
     M1 --> T17["TASK-17 1단계 적 AI"]:::todo
@@ -125,7 +125,7 @@ flowchart TD
 
 #### TASK-10: 결정론적 RNG
 
-- 상태: pending
+- 상태: completed
 - 상위: 없음
 - 목표: xoshiro128** 기반 시드 RNG를 구현하고 128bit 상태를 직렬화·복원한다.
 - 관련 요구사항과 설계: NFR-01, DES-04, [ADR-003](./work/20260817-ygj-remake-baseline/ADR-003-결정론적-RNG와-세이브-포함-정책.md)
@@ -137,7 +137,7 @@ flowchart TD
 
 #### TASK-11: 전투 데이터 확장
 
-- 상태: pending
+- 상태: completed
 - 상위: 없음
 - 목표: 무장(`officers.json`), 전투 상수(`combat-config.json`), 스테이지의 배치·적·승패 조건을 스키마와 시드 데이터로 추가한다.
 - 관련 요구사항과 설계: FR-02, FR-13, DES-12, [상세 스펙 §9](../yeonggeoljeon-remake-spec-detail.md)
@@ -149,7 +149,7 @@ flowchart TD
 
 #### TASK-12: 전투 상태 구성
 
-- 상태: pending
+- 상태: completed
 - 상위: 없음
 - 목표: 스테이지 데이터와 출진 명단으로 초기 `BattleState`(유닛·턴·페이즈·날씨)를 만든다.
 - 관련 요구사항과 설계: FR-02, DES-01, [전체 설계 §6.3](../yeonggeoljeon-remake-design.md)
@@ -161,7 +161,7 @@ flowchart TD
 
 #### TASK-13: 이동 범위 계산
 
-- 상태: pending
+- 상태: completed
 - 상위: 없음
 - 목표: 지형 코스트 합이 이동력 이하인 타일 집합을 구한다(다익스트라). 진입 불가 지형, 적 유닛 차단, 아군 통과 허용·정지 불가를 반영한다.
 - 관련 요구사항과 설계: FR-02, DES-01, [상세 스펙 §1.2](../yeonggeoljeon-remake-spec-detail.md)
@@ -173,7 +173,7 @@ flowchart TD
 
 #### TASK-14: 데미지 공식과 상성
 
-- 상태: pending
+- 상태: completed
 - 상위: 없음
 - 목표: [상세 스펙 §1.3](../yeonggeoljeon-remake-spec-detail.md)의 물리 데미지 공식과 상성·지형 보정을 구현한다. 모든 상수는 `combat-config.json`에서 읽는다.
 - 관련 요구사항과 설계: FR-02, FR-03, NFR-06, AC-04, DES-01

@@ -1,0 +1,5 @@
+{
+  "baseDamage": 300,
+  "minDamage": 1,
+  "damageJitter": { "min": 0.9, "max": 1.1 }
+}

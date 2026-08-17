@@ -1,0 +1,56 @@
+[
+  {
+    "id": "liu_bei",
+    "name": "유비 (프로토타입 값)",
+    "war": 73,
+    "int": 74,
+    "ldr": 78,
+    "classId": "sword_soldier",
+    "growth": { "baseHp": 1200, "hpPerLevel": 60 }
+  },
+  {
+    "id": "guan_yu",
+    "name": "관우 (프로토타입 값)",
+    "war": 97,
+    "int": 75,
+    "ldr": 95,
+    "classId": "spear_soldier",
+    "growth": { "baseHp": 1300, "hpPerLevel": 70 }
+  },
+  {
+    "id": "zhang_fei",
+    "name": "장비 (프로토타입 값)",
+    "war": 98,
+    "int": 30,
+    "ldr": 82,
+    "classId": "light_cavalry",
+    "growth": { "baseHp": 1300, "hpPerLevel": 70 }
+  },
+  {
+    "id": "cheng_yuanzhi",
+    "name": "정원지 (프로토타입 값)",
+    "war": 60,
+    "int": 40,
+    "ldr": 55,
+    "classId": "archer",
+    "growth": { "baseHp": 1000, "hpPerLevel": 50 }
+  },
+  {
+    "id": "deng_mao",
+    "name": "등무 (프로토타입 값)",
+    "war": 55,
+    "int": 35,
+    "ldr": 50,
+    "classId": "sword_soldier",
+    "growth": { "baseHp": 1000, "hpPerLevel": 50 }
+  },
+  {
+    "id": "zhang_bao",
+    "name": "장보 (프로토타입 값)",
+    "war": 70,
+    "int": 60,
+    "ldr": 65,
+    "classId": "heavy_cavalry",
+    "growth": { "baseHp": 1100, "hpPerLevel": 55 }
+  }
+]

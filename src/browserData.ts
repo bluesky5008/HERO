@@ -2,7 +2,9 @@ import type { RawGameData } from "./core/data/loader";
 import affinity from "../data/affinity.json";
 import animations from "../data/assets-map/animations.json";
 import classes from "../data/classes.json";
+import combatConfig from "../data/config/combat-config.json";
 import config from "../data/config/game-config.json";
+import officers from "../data/officers.json";
 import sprites from "../data/assets-map/sprites.json";
 import terrain from "../data/terrain.json";
 
@@ -23,5 +25,5 @@ export function readBrowserGameData(): RawGameData {
     stages[path.split("/").pop() ?? path] = value;
   }
 
-  return { config, terrain, classes, affinity, sprites, animations, stages };
+  return { config, combatConfig, terrain, classes, officers, affinity, sprites, animations, stages };
 }

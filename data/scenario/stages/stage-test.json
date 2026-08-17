@@ -22,5 +22,21 @@
       ["mountain", "mountain", "mountain", "plain", "plain", "plain", "castle_gate", "castle_gate", "plain", "plain", "plain", "plain", "plain", "plain", "mountain", "mountain", "mountain", "mountain", "mountain", "mountain"],
       ["mountain", "mountain", "mountain", "mountain", "castle", "castle", "castle", "castle", "castle", "castle", "plain", "plain", "plain", "plain", "mountain", "mountain", "mountain", "mountain", "mountain", "mountain"]
     ]
-  }
+  },
+  "deployment": {
+    "maxUnits": 3,
+    "zone": [[4, 12], [5, 12], [6, 12], [7, 12], [8, 12], [9, 12]],
+    "roster": [
+      { "officerId": "liu_bei", "level": 5 },
+      { "officerId": "guan_yu", "level": 5 },
+      { "officerId": "zhang_fei", "level": 5 }
+    ]
+  },
+  "enemies": [
+    { "officerId": "cheng_yuanzhi", "level": 5, "pos": [7, 8] },
+    { "officerId": "deng_mao", "level": 4, "pos": [5, 9] },
+    { "officerId": "zhang_bao", "level": 5, "pos": [10, 9] }
+  ],
+  "victory": { "type": "annihilateEnemies" },
+  "defeat": { "type": "officerLost", "officerIds": ["liu_bei"] }
 }

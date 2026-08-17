@@ -2,10 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   AnimationSetSchema,
   ClassSchema,
+  CombatConfigSchema,
+  OfficerSchema,
   StageSchema,
   TerrainSchema,
 } from "../../src/core/data/schemas";
-import { validAnimationSet, validClass, validStage, validTerrain } from "./fixtures";
+import {
+  validAnimationSet,
+  validClass,
+  validCombatConfig,
+  validOfficer,
+  validStage,
+  validTerrain,
+} from "./fixtures";
 
 describe("ClassSchema", () => {
   it("유효한 병과를 통과시킨다", () => {
@@ -101,16 +110,98 @@ describe("StageSchema", () => {
 
   it("타일 행 수가 height와 다르면 거부한다", () => {
     const stage = structuredClone(validStage);
-    stage.map.tiles = [["plain", "plain"]];
+    stage.map.tiles = [["plain", "plain", "plain"]];
     expect(StageSchema.safeParse(stage).success).toBe(false);
   });
 
   it("타일 열 수가 width와 다르면 거부한다", () => {
     const stage = structuredClone(validStage);
     stage.map.tiles = [
-      ["plain", "plain", "plain"],
-      ["plain", "plain", "plain"],
+      ["plain", "plain"],
+      ["plain", "plain"],
+      ["plain", "plain"],
     ];
     expect(StageSchema.safeParse(stage).success).toBe(false);
+  });
+
+  it("적 부대가 하나도 없으면 거부한다", () => {
+    expect(StageSchema.safeParse({ ...validStage, enemies: [] }).success).toBe(false);
+  });
+
+  it("출진 가능 수가 배치 칸 수보다 많으면 거부한다", () => {
+    const deployment = { ...validStage.deployment, maxUnits: 4 };
+    expect(StageSchema.safeParse({ ...validStage, deployment }).success).toBe(false);
+  });
+
+  it("사기를 지정하지 않은 적 부대는 100으로 채운다", () => {
+    const parsed = StageSchema.parse(validStage);
+    expect(parsed.enemies[0]?.morale).toBe(100);
+  });
+
+  it("승패 조건이 빠지면 거부한다", () => {
+    const withoutVictory: Record<string, unknown> = structuredClone(validStage);
+    delete withoutVictory.victory;
+    expect(StageSchema.safeParse(withoutVictory).success).toBe(false);
+  });
+
+  it("알 수 없는 승리 조건 유형을 거부한다", () => {
+    const victory = { type: "surviveTurns" };
+    expect(StageSchema.safeParse({ ...validStage, victory }).success).toBe(false);
+  });
+
+  it("패배 조건에 지목된 무장이 하나도 없으면 거부한다", () => {
+    const defeat = { type: "officerLost", officerIds: [] };
+    expect(StageSchema.safeParse({ ...validStage, defeat }).success).toBe(false);
+  });
+});
+
+describe("OfficerSchema", () => {
+  it("유효한 무장을 통과시킨다", () => {
+    expect(OfficerSchema.safeParse(validOfficer).success).toBe(true);
+  });
+
+  it.each(["war", "int", "ldr"] as const)("%s이 1~100을 벗어나면 거부한다", (stat) => {
+    expect(OfficerSchema.safeParse({ ...validOfficer, [stat]: 0 }).success).toBe(false);
+    expect(OfficerSchema.safeParse({ ...validOfficer, [stat]: 101 }).success).toBe(false);
+  });
+
+  it("능력치가 정수가 아니면 거부한다", () => {
+    expect(OfficerSchema.safeParse({ ...validOfficer, war: 73.5 }).success).toBe(false);
+  });
+
+  it("병력 상한 성장값이 0 이하이면 거부한다", () => {
+    const growth = { ...validOfficer.growth, baseHp: 0 };
+    expect(OfficerSchema.safeParse({ ...validOfficer, growth }).success).toBe(false);
+  });
+
+  it("병력 성장 정의가 빠지면 거부한다", () => {
+    const withoutGrowth: Record<string, unknown> = { ...validOfficer };
+    delete withoutGrowth.growth;
+    expect(OfficerSchema.safeParse(withoutGrowth).success).toBe(false);
+  });
+});
+
+describe("CombatConfigSchema", () => {
+  it("유효한 전투 상수를 통과시킨다", () => {
+    expect(CombatConfigSchema.safeParse(validCombatConfig).success).toBe(true);
+  });
+
+  it("기본 데미지가 0 이하이면 거부한다", () => {
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, baseDamage: 0 }).success).toBe(
+      false,
+    );
+  });
+
+  it("최소 데미지가 음수이면 거부한다", () => {
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, minDamage: -1 }).success).toBe(
+      false,
+    );
+  });
+
+  it("난수 폭의 최솟값이 최댓값보다 크면 거부한다", () => {
+    const damageJitter = { min: 1.2, max: 1.1 };
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, damageJitter }).success).toBe(
+      false,
+    );
   });
 });

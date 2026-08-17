@@ -1,8 +1,11 @@
 import type {
   Affinity,
   AnimationSet,
+  CombatConfig,
   Family,
   GameConfig,
+  Officer,
+  Pos,
   Sprite,
   Stage,
   Terrain,
@@ -20,8 +23,10 @@ export interface DataIssue {
 
 export interface GameData {
   config: GameConfig;
+  combatConfig: CombatConfig;
   terrain: Terrain[];
   classes: UnitClass[];
+  officers: Officer[];
   affinity: Affinity[];
   sprites: Record<string, Sprite>;
   animations: Record<string, AnimationSet>;
@@ -59,6 +64,9 @@ export function checkIntegrity(data: GameData): DataIssue[] {
   }
   for (const id of duplicateIds(data.classes.map((c) => c.id))) {
     issues.push(issue("classes.json", `id=${id}`, `병과 ID가 중복 정의되었다: ${id}`));
+  }
+  for (const id of duplicateIds(data.officers.map((o) => o.id))) {
+    issues.push(issue("officers.json", `id=${id}`, `무장 ID가 중복 정의되었다: ${id}`));
   }
   for (const id of duplicateIds(data.stages.map((s) => s.id))) {
     issues.push(issue("scenario/stages", `id=${id}`, `스테이지 ID가 중복 정의되었다: ${id}`));
@@ -115,8 +123,21 @@ export function checkIntegrity(data: GameData): DataIssue[] {
     }
   });
 
+  data.officers.forEach((officer, index) => {
+    if (!classIds.has(officer.classId)) {
+      issues.push(
+        issue(
+          "officers.json",
+          `officers[${index}] (${officer.id}).classId`,
+          `무장 ${officer.id}의 병과 '${officer.classId}'가 classes.json에 없다`,
+        ),
+      );
+    }
+  });
+
   issues.push(...checkAffinityCoverage(data));
   issues.push(...checkStageTiles(data, terrainIds));
+  issues.push(...checkStageBattleSetup(data));
 
   return issues;
 }
@@ -140,6 +161,70 @@ function checkAffinityCoverage(data: GameData): DataIssue[] {
       }
     }
   }
+  return issues;
+}
+
+/** 배치·적·승패 조건이 실제로 존재하는 무장과 맵 안 좌표를 가리키는지 본다. */
+function checkStageBattleSetup(data: GameData): DataIssue[] {
+  const issues: DataIssue[] = [];
+  const officerIds = new Set(data.officers.map((o) => o.id));
+
+  for (const stage of data.stages) {
+    const source = `scenario/stages/${stage.id}`;
+    const inMap = ([x, y]: Pos): boolean =>
+      x < stage.map.width && y < stage.map.height;
+
+    const requireOfficer = (path: string, officerId: string): void => {
+      if (!officerIds.has(officerId)) {
+        issues.push(issue(source, path, `무장 '${officerId}'가 officers.json에 없다`));
+      }
+    };
+
+    stage.deployment.zone.forEach((pos, index) => {
+      if (!inMap(pos)) {
+        issues.push(
+          issue(
+            source,
+            `deployment.zone[${index}]`,
+            `배치 좌표 [${pos[0]}, ${pos[1]}]가 맵(${stage.map.width}×${stage.map.height}) 밖이다`,
+          ),
+        );
+      }
+    });
+
+    stage.deployment.roster?.forEach((entry, index) => {
+      requireOfficer(`deployment.roster[${index}].officerId`, entry.officerId);
+    });
+
+    const occupied = new Set<string>();
+    stage.enemies.forEach((enemy, index) => {
+      const at = `enemies[${index}]`;
+      requireOfficer(`${at}.officerId`, enemy.officerId);
+
+      if (!inMap(enemy.pos)) {
+        issues.push(
+          issue(
+            source,
+            `${at}.pos`,
+            `배치 좌표 [${enemy.pos[0]}, ${enemy.pos[1]}]가 맵(${stage.map.width}×${stage.map.height}) 밖이다`,
+          ),
+        );
+      }
+
+      const key = `${enemy.pos[0]},${enemy.pos[1]}`;
+      if (occupied.has(key)) {
+        issues.push(
+          issue(source, `${at}.pos`, `적 부대가 같은 칸 [${enemy.pos[0]}, ${enemy.pos[1]}]에 겹친다`),
+        );
+      }
+      occupied.add(key);
+    });
+
+    stage.defeat.officerIds.forEach((officerId, index) => {
+      requireOfficer(`defeat.officerIds[${index}]`, officerId);
+    });
+  }
+
   return issues;
 }
 

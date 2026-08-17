@@ -1,4 +1,4 @@
-import type { RawGameData } from "../../src/core/data/loader";
+import { formatIssues, loadGameData, type GameData, type RawGameData } from "../../src/core/data/loader";
 
 /** 스키마·무결성 테스트용 최소 유효 데이터. 각 테스트가 필요한 부분만 덮어써서 쓴다. */
 
@@ -50,18 +50,40 @@ export const validSprite = {
   placeholderColor: "#c94f4f",
 };
 
+export const validOfficer = {
+  id: "liu_bei",
+  name: "유비",
+  war: 73,
+  int: 74,
+  ldr: 78,
+  classId: "sword_soldier",
+  growth: { baseHp: 1200, hpPerLevel: 60 },
+};
+
 export const validStage = {
   id: "stage-test",
   name: "테스트 스테이지",
   map: {
-    width: 2,
-    height: 2,
+    width: 3,
+    height: 3,
     tiles: [
-      ["plain", "plain"],
-      ["plain", "plain"],
+      ["plain", "plain", "plain"],
+      ["plain", "plain", "plain"],
+      ["plain", "plain", "plain"],
     ],
   },
   weather: "clear",
+  deployment: {
+    maxUnits: 2,
+    zone: [[0, 2], [1, 2], [2, 2]],
+    roster: [
+      { officerId: "liu_bei", level: 5 },
+      { officerId: "guan_yu", level: 5 },
+    ],
+  },
+  enemies: [{ officerId: "deng_mao", level: 5, pos: [1, 0] }],
+  victory: { type: "annihilateEnemies" },
+  defeat: { type: "officerLost", officerIds: ["liu_bei"] },
 };
 
 export const validConfig = {
@@ -70,15 +92,36 @@ export const validConfig = {
   logicalHeight: 720,
 };
 
+export const validCombatConfig = {
+  baseDamage: 300,
+  minDamage: 1,
+  damageJitter: { min: 0.9, max: 1.1 },
+};
+
 /** 스키마와 참조 무결성을 모두 통과하는 최소 데이터 묶음. */
 export function validRawGameData(): RawGameData {
   return {
     config: { ...validConfig },
+    combatConfig: { ...validCombatConfig },
     terrain: [{ ...validTerrain }],
     classes: [{ ...validClass }],
+    officers: [
+      { ...validOfficer },
+      { ...validOfficer, id: "guan_yu", name: "관우", war: 97, ldr: 95 },
+      { ...validOfficer, id: "deng_mao", name: "등무", war: 55, ldr: 50 },
+    ],
     affinity: [{ attacker: "infantry", defender: "infantry", modifier: 1 }],
     sprites: { sword_soldier: { ...validSprite } },
     animations: { sword_soldier: structuredClone(validAnimationSet) },
     stages: { "stage-test.json": structuredClone(validStage) },
   };
+}
+
+/** 검증을 통과한 형태의 데이터 묶음. 전투 로직 테스트가 로더를 거쳐 그대로 쓴다. */
+export function validGameData(): GameData {
+  const { data, issues } = loadGameData(validRawGameData());
+  if (!data || issues.length > 0) {
+    throw new Error(`픽스처가 유효하지 않다:\n${formatIssues(issues)}`);
+  }
+  return data;
 }

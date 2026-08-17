@@ -3,7 +3,9 @@ import {
   AffinitySchema,
   AnimationSetSchema,
   ClassSchema,
+  CombatConfigSchema,
   GameConfigSchema,
+  OfficerSchema,
   SpriteSchema,
   StageSchema,
   TerrainSchema,
@@ -18,8 +20,10 @@ export type { DataIssue, GameData } from "./integrity";
  */
 export interface RawGameData {
   config: unknown;
+  combatConfig: unknown;
   terrain: unknown;
   classes: unknown;
+  officers: unknown;
   affinity: unknown;
   sprites: unknown;
   animations: unknown;
@@ -61,8 +65,15 @@ export function loadGameData(raw: RawGameData): LoadResult {
   const issues: DataIssue[] = [];
 
   const config = parse(GameConfigSchema, "config/game-config.json", raw.config, issues);
+  const combatConfig = parse(
+    CombatConfigSchema,
+    "config/combat-config.json",
+    raw.combatConfig,
+    issues,
+  );
   const terrain = parse(TerrainSchema.array(), "terrain.json", raw.terrain, issues);
   const classes = parse(ClassSchema.array(), "classes.json", raw.classes, issues);
+  const officers = parse(OfficerSchema.array(), "officers.json", raw.officers, issues);
   const affinity = parse(AffinitySchema.array(), "affinity.json", raw.affinity, issues);
   const sprites = parse(
     z.record(z.string(), SpriteSchema),
@@ -85,11 +96,31 @@ export function loadGameData(raw: RawGameData): LoadResult {
     else stagesOk = false;
   }
 
-  if (!config || !terrain || !classes || !affinity || !sprites || !animations || !stagesOk) {
+  if (
+    !config ||
+    !combatConfig ||
+    !terrain ||
+    !classes ||
+    !officers ||
+    !affinity ||
+    !sprites ||
+    !animations ||
+    !stagesOk
+  ) {
     return { data: null, issues };
   }
 
-  const data: GameData = { config, terrain, classes, affinity, sprites, animations, stages };
+  const data: GameData = {
+    config,
+    combatConfig,
+    terrain,
+    classes,
+    officers,
+    affinity,
+    sprites,
+    animations,
+    stages,
+  };
   issues.push(...checkIntegrity(data));
 
   return { data, issues };

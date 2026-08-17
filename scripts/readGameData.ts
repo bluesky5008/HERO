@@ -44,8 +44,10 @@ export function readGameData(dataDir: string): RawGameData {
 
   return {
     config: readJson(dataDir, join("config", "game-config.json")),
+    combatConfig: readJson(dataDir, join("config", "combat-config.json")),
     terrain: readJson(dataDir, "terrain.json"),
     classes: readJson(dataDir, "classes.json"),
+    officers: readJson(dataDir, "officers.json"),
     affinity: readJson(dataDir, "affinity.json"),
     sprites: readJson(dataDir, join("assets-map", "sprites.json")),
     animations: readJson(dataDir, join("assets-map", "animations.json")),
