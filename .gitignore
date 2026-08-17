@@ -1,0 +1,13 @@
+# 의존성·빌드 산출물
+node_modules/
+dist/
+src-tauri/target/
+
+# 원작 대조용 개인 참고 자료 (저작물 — 리포에 포함하지 않음, NFR-07)
+reference/
+
+# 로그·환경
+*.log
+.env
+.DS_Store
+Thumbs.db
