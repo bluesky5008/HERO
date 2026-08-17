@@ -39,6 +39,26 @@ describe("createBattleState", () => {
     expect(build({ level: 1 }).units[0]?.hpMax).toBe(1200);
   });
 
+  it("적 부대의 성장은 다음 전투로 이관되지 않는다", () => {
+    // 앞선 전투에서 적이 레벨업했다고 가정한다.
+    const previous = build({});
+    const grown = previous.units[1]!;
+    grown.level += 3;
+    grown.exp = 80;
+    grown.hpMax += 300;
+
+    // 같은 스테이지로 전투를 다시 세우면 적은 스테이지 데이터가 정한 값에서 다시 시작한다.
+    const enemy = build({}).units[1]!;
+
+    expect(enemy.level).toBe(stage.enemies[0]!.level);
+    expect(enemy.exp).toBe(0);
+    expect(enemy.hpMax).toBeLessThan(grown.hpMax);
+  });
+
+  it("모든 부대는 경험치 0에서 시작한다", () => {
+    expect(build({}).units.map((unit) => unit.exp)).toEqual([0, 0]);
+  });
+
   it("책략치 상한을 지력과 레벨로 계산하고 가득 채워 시작한다 ([상세 스펙 §1.5])", () => {
     const liuBei = build({}).units[0]!;
 

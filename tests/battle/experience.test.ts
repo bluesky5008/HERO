@@ -134,22 +134,24 @@ describe("gainExp — 누적과 레벨업", () => {
   });
 });
 
-describe("gainExp — 적 부대는 성장하지 않는다 (원작 재현)", () => {
-  it("적 부대는 경험치를 얻지 않는다", () => {
+describe("gainExp — 적 부대의 성장은 이 전투 안에서만 유효하다", () => {
+  it("적 부대도 전투 중에는 경험치를 얻는다", () => {
     const b = battle([at("foot2", "enemy", [2, 1])]);
 
-    expect(gainExp(b.ctx, b.unit("foot2"), 50)).toEqual([]);
-    expect(b.unit("foot2").exp).toBe(0);
+    expect(gainExp(b.ctx, b.unit("foot2"), 50)).toEqual([
+      { type: "expGained", officerId: "foot2", amount: 50 },
+    ]);
+    expect(b.unit("foot2").exp).toBe(50);
   });
 
-  it("적 부대는 레벨도 병력 상한도 오르지 않는다", () => {
+  it("적 부대도 전투 중에는 레벨이 오르고 병력 상한이 커진다", () => {
     const b = battle([{ ...at("foot2", "enemy", [2, 1]), level: 5, exp: 99 }]);
     const before = b.unit("foot2").hpMax;
 
-    gainExp(b.ctx, b.unit("foot2"), b.ctx.data.combatConfig.exp.perLevel);
+    gainExp(b.ctx, b.unit("foot2"), 1);
 
-    expect(b.unit("foot2").level).toBe(5);
-    expect(b.unit("foot2").hpMax).toBe(before);
+    expect(b.unit("foot2").level).toBe(6);
+    expect(b.unit("foot2").hpMax).toBeGreaterThan(before);
   });
 });
 
@@ -216,32 +218,10 @@ describe("공격·격파 경험치 지급", () => {
     expect(b.ctx.data.config.shareExp).toBe(false);
   });
 
-  it("적이 아군을 공격하고 격파해도 경험치를 얻지 않는다", () => {
+  it("적이 아군을 격파해도 같은 규칙으로 경험치를 얻는다", () => {
     const b = battle(
       [{ ...at("foot", "player", [1, 1]), hp: 1 }, at("foot2", "enemy", [2, 1])],
       FIXED,
-    );
-    b.state.phase = "enemy";
-
-    const events = applyCommand(
-      b.ctx,
-      b.state,
-      { type: "attack", officerId: "foot2", targetId: "foot" },
-      createRng(1),
-    );
-
-    expect(b.unit("foot2").exp).toBe(0);
-    expect(events.some((event) => event.type === "expGained")).toBe(false);
-  });
-
-  it("경험치 공유를 켜도 적 진영에는 분배되지 않는다", () => {
-    const b = battle(
-      [
-        { ...at("foot", "player", [1, 1]), hp: 1 },
-        at("foot2", "enemy", [2, 1]),
-        at("horse", "enemy", [5, 1]),
-      ],
-      { ...FIXED, config: { shareExp: true } },
     );
     b.state.phase = "enemy";
 
@@ -252,7 +232,7 @@ describe("공격·격파 경험치 지급", () => {
       createRng(1),
     );
 
-    expect(b.unit("foot2").exp).toBe(0);
-    expect(b.unit("horse").exp).toBe(0);
+    const { min, defeatBonus } = b.ctx.data.combatConfig.exp;
+    expect(b.unit("foot2").exp).toBe(min + defeatBonus);
   });
 });

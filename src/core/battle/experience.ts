@@ -10,7 +10,11 @@ import {
 
 /**
  * 경험치와 레벨업([상세 스펙 §1.6], DES-01 → FR-06).
- * 성장은 아군 부대만의 것이다 — 적 부대는 전투 중 경험치를 얻지 않는다(원작 재현).
+ *
+ * 경험치는 진영을 가리지 않고 쌓이지만, **적 부대의 성장은 이 전투 안에서만 유효하다** —
+ * 적 배치는 언제나 스테이지 데이터(`stage.enemies`)에서 새로 세워지므로 다음 스테이지로 이관되지 않는다.
+ * 아군의 성장만 캠페인이 이어받는다(M3). 그 불변식은 `tests/battle/state.test.ts`가 지킨다.
+ *
  * 나눗수·상하한·격파 보너스·레벨당 경험치는 전부 `combat-config.json`에서 읽는다(NFR-06).
  * 책략·회복·아이템·일기토의 경험치는 그 기능이 들어오는 뒤 작업에서 `gainExp`를 부른다.
  */
@@ -27,9 +31,7 @@ export function attackExp(ctx: BattleContext, damage: number): number {
  * 배치 시점과 전투 중의 상한식이 갈라지면 같은 부대가 화면마다 다른 값을 갖는다.
  */
 export function gainExp(ctx: BattleContext, unit: Unit, amount: number): BattleEvent[] {
-  // 성장하는 것은 아군 부대뿐이다(원작 재현) — 적 부대는 전투 중 경험치도 레벨도 얻지 않는다.
-  // 경험치를 주는 모든 경로가 이 함수를 지나므로 책략·아이템·일기토도 같은 규칙을 따른다.
-  if (amount <= 0 || unit.side !== "player") return [];
+  if (amount <= 0) return [];
 
   const { maxLevel, exp } = ctx.data.combatConfig;
   const events: BattleEvent[] = [{ type: "expGained", officerId: unit.officerId, amount }];

@@ -91,6 +91,10 @@ const posKey = ([x, y]: Pos): string => `${x},${y}`;
 /**
  * 스테이지 데이터와 출진 배치로 전투 시작 상태를 만든다.
  * 출진 명단은 M1에서 스테이지의 `deployment.roster`가, M3부터는 캠페인 편성이 공급한다.
+ *
+ * 적 부대는 언제나 `stage.enemies`에서 새로 세워진다 — 전투 중 얻은 경험치·레벨은
+ * 그 전투에서만 유효하고 다음 스테이지로 이관되지 않는다([상세 스펙 §1.6]의 성장은 아군 몫이다).
+ * M3에서 캠페인이 명단을 공급할 때도 이 자리는 플레이어 편성만 받는다.
  */
 export function createBattleState(
   data: GameData,
