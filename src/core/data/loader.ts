@@ -8,6 +8,7 @@ import {
   OfficerSchema,
   SpriteSchema,
   StageSchema,
+  TacticSchema,
   TerrainSchema,
 } from "./schemas";
 import { checkIntegrity, type DataIssue, type GameData } from "./integrity";
@@ -23,6 +24,7 @@ export interface RawGameData {
   combatConfig: unknown;
   terrain: unknown;
   classes: unknown;
+  tactics: unknown;
   officers: unknown;
   affinity: unknown;
   sprites: unknown;
@@ -73,6 +75,7 @@ export function loadGameData(raw: RawGameData): LoadResult {
   );
   const terrain = parse(TerrainSchema.array(), "terrain.json", raw.terrain, issues);
   const classes = parse(ClassSchema.array(), "classes.json", raw.classes, issues);
+  const tactics = parse(TacticSchema.array(), "tactics.json", raw.tactics, issues);
   const officers = parse(OfficerSchema.array(), "officers.json", raw.officers, issues);
   const affinity = parse(AffinitySchema.array(), "affinity.json", raw.affinity, issues);
   const sprites = parse(
@@ -101,6 +104,7 @@ export function loadGameData(raw: RawGameData): LoadResult {
     !combatConfig ||
     !terrain ||
     !classes ||
+    !tactics ||
     !officers ||
     !affinity ||
     !sprites ||
@@ -115,6 +119,7 @@ export function loadGameData(raw: RawGameData): LoadResult {
     combatConfig,
     terrain,
     classes,
+    tactics,
     officers,
     affinity,
     sprites,

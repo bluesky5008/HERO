@@ -22,8 +22,9 @@ try {
   const classCount = data?.classes.length ?? 0;
   const officerCount = data?.officers.length ?? 0;
   const terrainCount = data?.terrain.length ?? 0;
+  const tacticCount = data?.tactics.length ?? 0;
   console.log(
-    `데이터 검증 통과 (${dataDir}/) — 병과 ${classCount}, 무장 ${officerCount}, 지형 ${terrainCount}, 스테이지 ${stageCount}`,
+    `데이터 검증 통과 (${dataDir}/) — 병과 ${classCount}, 책략 ${tacticCount}, 무장 ${officerCount}, 지형 ${terrainCount}, 스테이지 ${stageCount}`,
   );
 } catch (error) {
   if (error instanceof DataReadError) {

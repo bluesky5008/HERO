@@ -6,6 +6,7 @@ import combatConfig from "../data/config/combat-config.json";
 import config from "../data/config/game-config.json";
 import officers from "../data/officers.json";
 import sprites from "../data/assets-map/sprites.json";
+import tactics from "../data/tactics.json";
 import terrain from "../data/terrain.json";
 
 /**
@@ -25,5 +26,16 @@ export function readBrowserGameData(): RawGameData {
     stages[path.split("/").pop() ?? path] = value;
   }
 
-  return { config, combatConfig, terrain, classes, officers, affinity, sprites, animations, stages };
+  return {
+    config,
+    combatConfig,
+    terrain,
+    classes,
+    tactics,
+    officers,
+    affinity,
+    sprites,
+    animations,
+    stages,
+  };
 }

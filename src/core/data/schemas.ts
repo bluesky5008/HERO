@@ -61,12 +61,16 @@ export const CombatConfigSchema = z.object({
     /** 그 판정이 혼란으로 이어질 확률 0~1 */
     chance: z.number().min(0).max(1),
   }),
-  /** 거점 위 부대의 턴 시작 회복([상세 스펙 §1.7]). 책략치 회복은 M2 TASK-23에서 더한다. */
+  /** 거점 위 부대의 턴 시작 회복([상세 스펙 §1.7]) */
   strongholdRecovery: z.object({
     /** 병력 상한 대비 회복 비율(초기 0.1 = +10%) */
     hpRatio: z.number().nonnegative(),
     morale: z.number().int().nonnegative(),
+    /** 책략치의 자연 회복은 거점 위에서만 일어난다([상세 스펙 §1.5]) */
+    mp: z.number().int().nonnegative(),
   }),
+  /** 책략치 상한식 `floor(지력 / 이 값) + 레벨`([상세 스펙 §1.5]) */
+  mpIntDivisor: z.number().int().positive(),
   /** 레벨 상한([상세 스펙 §1.6]). 출진 명단의 레벨 상한과 달리 전투 중 성장의 천장이다. */
   maxLevel: z.number().int().positive(),
   /** 경험치([상세 스펙 §1.6]) */
@@ -88,6 +92,39 @@ export const CombatConfigSchema = z.object({
     }),
 });
 export type CombatConfig = z.infer<typeof CombatConfigSchema>;
+
+/** 날씨. 스테이지가 정하고 책략 게이트가 읽는다([상세 스펙 §1.5·§1.7]). */
+export const WeatherSchema = z.enum(["clear", "rain"]);
+export type Weather = z.infer<typeof WeatherSchema>;
+
+/** 지형·날씨별 효과 배수. 적히지 않은 키는 배수 1로 본다. */
+const BonusTableSchema = z.record(z.string().min(1), z.number().nonnegative());
+
+/**
+ * 책략([전체 설계 §4.4], [상세 스펙 §1.5]).
+ * 지형·날씨 게이트를 코드의 분기가 아니라 데이터로 표현한다 — 새 책략이 코드 수정 없이 들어와야 한다(FR-13).
+ * `category`는 병과가 무엇을 배우는지 묶는 계열이고, 실제 판정은 아래 게이트 필드가 한다.
+ * 콘솔판 풍계는 v1 범위 밖이며 카테고리를 늘리는 것만으로 지원된다.
+ */
+export const TacticSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  category: z.enum(["fire", "water", "earth", "moraleDown", "heal"]),
+  /** 소비 책략치 */
+  cost: z.number().int().nonnegative(),
+  /** 피해·회복량의 기준값. 사기 변화처럼 양을 쓰지 않는 효과는 0이다. */
+  baseDamage: z.number().nonnegative(),
+  range: z.number().int().positive(),
+  /** `cross5`는 대상 타일과 상하좌우 5타일([상세 스펙 §1.5]의 "대" 계열) */
+  area: z.enum(["single", "cross5"]),
+  /** 이 지형 위의 대상에게만 쓸 수 있다(지계). `null`이면 지형 제한 없음. */
+  terrainRequired: z.array(z.string().min(1)).min(1).nullable(),
+  terrainBonus: BonusTableSchema,
+  weatherForbidden: z.array(WeatherSchema),
+  weatherBonus: BonusTableSchema,
+  effect: z.enum(["damage", "moraleDown", "confuse", "healHp", "healMorale", "healBoth"]),
+});
+export type Tactic = z.infer<typeof TacticSchema>;
 
 /** 진입 불가는 숫자 코스트 대신 "blocked"로 표기한다. */
 const MoveCostSchema = z.union([z.number().int().positive(), z.literal("blocked")]);
@@ -255,7 +292,7 @@ export const StageSchema = z.object({
         }
       });
     }),
-  weather: z.enum(["clear", "rain"]),
+  weather: WeatherSchema,
   deployment: z
     .object({
       maxUnits: z.number().int().positive(),

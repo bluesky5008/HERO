@@ -7,6 +7,7 @@ import {
   validRawGameData,
   validSprite,
   validStage,
+  validTactic,
 } from "./fixtures";
 
 /**
@@ -64,6 +65,45 @@ describe("loadGameData — 스키마 위반", () => {
     expect(result.data).toBeNull();
     expect(result.issues.length).toBeGreaterThan(0);
     expect(report(result.issues)).toContain("movement");
+  });
+});
+
+describe("loadGameData — 책략 참조 무결성 (AC-01)", () => {
+  it("병과가 없는 책략 ID를 가리키면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.classes = [{ ...validClass, tactics: ["no_such_tactic"] }];
+
+    const issues = loadGameData(raw).issues;
+
+    expect(issues.length).toBeGreaterThan(0);
+    expect(report(issues)).toContain("no_such_tactic");
+  });
+
+  it("책략 ID가 중복 정의되면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.tactics = [{ ...validTactic }, { ...validTactic, name: "화시 사본" }];
+
+    const issues = loadGameData(raw).issues;
+
+    expect(report(issues)).toContain("fire_arrow");
+  });
+
+  it("책략의 지형 요구가 없는 지형을 가리키면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.tactics = [{ ...validTactic, terrainRequired: ["no_such_terrain"] }];
+
+    const issues = loadGameData(raw).issues;
+
+    expect(report(issues)).toContain("no_such_terrain");
+  });
+
+  it("책략의 지형 보정이 없는 지형을 가리키면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.tactics = [{ ...validTactic, terrainBonus: { no_such_terrain: 1.25 } }];
+
+    const issues = loadGameData(raw).issues;
+
+    expect(report(issues)).toContain("no_such_terrain");
   });
 });
 

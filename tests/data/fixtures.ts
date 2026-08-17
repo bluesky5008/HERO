@@ -36,6 +36,21 @@ export const validClass = {
   sprite: "sword_soldier",
 };
 
+export const validTactic = {
+  id: "fire_arrow",
+  name: "화시",
+  category: "fire",
+  cost: 4,
+  baseDamage: 300,
+  range: 3,
+  area: "single",
+  terrainRequired: null,
+  terrainBonus: { forest: 1.25 },
+  weatherForbidden: ["rain"],
+  weatherBonus: {},
+  effect: "damage",
+};
+
 export const validAnimationSet = {
   idle: { frames: [0, 1], fps: 2 },
   move: { frames: [2, 3, 4, 5], fps: 8 },
@@ -100,7 +115,8 @@ export const validCombatConfig = {
   moraleMax: 100,
   moraleLossOnHit: 2,
   confusion: { threshold: 30, chance: 0.5 },
-  strongholdRecovery: { hpRatio: 0.1, morale: 5 },
+  strongholdRecovery: { hpRatio: 0.1, morale: 5, mp: 2 },
+  mpIntDivisor: 4,
   maxLevel: 99,
   exp: { divisor: 10, min: 1, max: 40, defeatBonus: 45, perLevel: 100 },
 };
@@ -110,8 +126,10 @@ export function validRawGameData(): RawGameData {
   return {
     config: { ...validConfig },
     combatConfig: { ...validCombatConfig },
-    terrain: [{ ...validTerrain }],
-    classes: [{ ...validClass }],
+    // 책략의 지형 보정이 가리킬 두 번째 지형이 있어야 참조 검사가 실제로 동작한다.
+    terrain: [{ ...validTerrain }, { ...validTerrain, id: "forest", name: "숲" }],
+    classes: [{ ...validClass, tactics: ["fire_arrow"] }],
+    tactics: [{ ...validTactic }],
     officers: [
       { ...validOfficer },
       { ...validOfficer, id: "guan_yu", name: "관우", war: 97, ldr: 95 },

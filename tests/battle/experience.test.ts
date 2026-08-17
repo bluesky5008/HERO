@@ -78,6 +78,24 @@ describe("gainExp — 누적과 레벨업", () => {
     expect(b.unit("foot").hp).toBe(600);
   });
 
+  it("레벨업으로 책략치 상한이 재계산된다 ([상세 스펙 §1.6])", () => {
+    const b = battle([{ ...at("foot", "player", [1, 1]), level: 5, exp: 99 }]);
+    const before = b.unit("foot").mpMax;
+
+    gainExp(b.ctx, b.unit("foot"), 1);
+
+    // mpMax = floor(지력/4) + 레벨이므로 레벨 1당 1 오른다.
+    expect(b.unit("foot").mpMax).toBe(before + 1);
+  });
+
+  it("레벨업이 현재 책략치를 채워 주지는 않는다 — 상한만 재계산한다", () => {
+    const b = battle([{ ...at("foot", "player", [1, 1]), level: 5, exp: 99, mp: 2 }]);
+
+    gainExp(b.ctx, b.unit("foot"), 1);
+
+    expect(b.unit("foot").mp).toBe(2);
+  });
+
   it("한 번에 여러 레벨이 오를 수 있다", () => {
     const b = battle([{ ...at("foot", "player", [1, 1]), level: 5 }]);
     const { perLevel } = b.ctx.data.combatConfig.exp;

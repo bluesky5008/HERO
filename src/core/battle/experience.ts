@@ -1,5 +1,12 @@
 import type { BattleEvent } from "./events";
-import { hpMaxOf, officerOf, type BattleContext, type BattleState, type Unit } from "./state";
+import {
+  hpMaxOf,
+  mpMaxOf,
+  officerOf,
+  type BattleContext,
+  type BattleState,
+  type Unit,
+} from "./state";
 
 /**
  * 경험치와 레벨업([상세 스펙 §1.6], DES-01 → FR-06).
@@ -32,10 +39,14 @@ export function gainExp(ctx: BattleContext, unit: Unit, amount: number): BattleE
     unit.exp -= exp.perLevel;
     unit.level += 1;
 
-    // 상한이 오른 만큼 병력도 회복한다([상세 스펙 §1.6]). 책략치 상한 재계산은 M2 TASK-23이 더한다.
-    const hpMax = hpMaxOf(officerOf(ctx, unit), unit.level);
+    // 상한이 오른 만큼 병력도 회복한다([상세 스펙 §1.6]).
+    const officer = officerOf(ctx, unit);
+    const hpMax = hpMaxOf(officer, unit.level);
     unit.hp += hpMax - unit.hpMax;
     unit.hpMax = hpMax;
+
+    // 책략치는 상한만 재계산한다 — 규칙이 회복까지 정한 것은 병력뿐이다([상세 스펙 §1.6]).
+    unit.mpMax = mpMaxOf(ctx.data.combatConfig, officer, unit.level);
 
     events.push({ type: "leveledUp", officerId: unit.officerId, level: unit.level });
   }

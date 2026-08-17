@@ -6,6 +6,7 @@ import {
   GameConfigSchema,
   OfficerSchema,
   StageSchema,
+  TacticSchema,
   TerrainSchema,
 } from "../../src/core/data/schemas";
 import {
@@ -15,8 +16,56 @@ import {
   validConfig,
   validOfficer,
   validStage,
+  validTactic,
   validTerrain,
 } from "./fixtures";
+
+describe("TacticSchema", () => {
+  it("유효한 책략을 통과시킨다", () => {
+    expect(TacticSchema.safeParse(validTactic).success).toBe(true);
+  });
+
+  it("책략치 비용이 음수이면 거부한다", () => {
+    expect(TacticSchema.safeParse({ ...validTactic, cost: -1 }).success).toBe(false);
+  });
+
+  it("알 수 없는 카테고리를 거부한다", () => {
+    expect(TacticSchema.safeParse({ ...validTactic, category: "wind" }).success).toBe(false);
+  });
+
+  it("알 수 없는 효과를 거부한다", () => {
+    expect(TacticSchema.safeParse({ ...validTactic, effect: "instantKill" }).success).toBe(false);
+  });
+
+  it("알 수 없는 범위 유형을 거부한다", () => {
+    expect(TacticSchema.safeParse({ ...validTactic, area: "all" }).success).toBe(false);
+  });
+
+  it("십자 5타일 범위를 통과시킨다 ([상세 스펙 §1.5]의 \"대\" 계열)", () => {
+    expect(TacticSchema.safeParse({ ...validTactic, area: "cross5" }).success).toBe(true);
+  });
+
+  it("사거리가 0 이하이면 거부한다", () => {
+    expect(TacticSchema.safeParse({ ...validTactic, range: 0 }).success).toBe(false);
+  });
+
+  it("지형 요구를 지정하지 않으면 null이다 (지계만 값을 갖는다)", () => {
+    const earth = { ...validTactic, category: "earth", terrainRequired: ["mountain", "wasteland"] };
+
+    expect(TacticSchema.safeParse(earth).success).toBe(true);
+    expect(TacticSchema.parse(validTactic).terrainRequired).toBeNull();
+  });
+
+  it("지형·날씨 보정 배수가 음수이면 거부한다", () => {
+    const terrainBonus = { forest: -1 };
+    expect(TacticSchema.safeParse({ ...validTactic, terrainBonus }).success).toBe(false);
+  });
+
+  it("알 수 없는 금지 날씨를 거부한다", () => {
+    const weatherForbidden = ["snow"];
+    expect(TacticSchema.safeParse({ ...validTactic, weatherForbidden }).success).toBe(false);
+  });
+});
 
 describe("GameConfigSchema", () => {
   it("유효한 게임 설정을 통과시킨다", () => {

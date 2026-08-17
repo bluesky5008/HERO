@@ -9,13 +9,17 @@ import { terrainAt, type BattleContext, type BattleState, type Unit } from "./st
 
 export type Outcome = "victory" | "defeat";
 
-/** 거점 위 부대의 턴 시작 회복([상세 스펙 §1.7] — 턴 시작 ②). 책략치 회복은 M2 TASK-23이 더한다. */
+/**
+ * 거점 위 부대의 턴 시작 회복([상세 스펙 §1.7] — 턴 시작 ②).
+ * 책략치의 자연 회복은 이 자리에서만 일어난다([상세 스펙 §1.5]).
+ */
 function recoverOnStronghold(ctx: BattleContext, unit: Unit): BattleEvent[] {
   if (!terrainAt(ctx, unit.pos)?.stronghold) return [];
 
-  const { hpRatio, morale } = ctx.data.combatConfig.strongholdRecovery;
+  const { hpRatio, morale, mp } = ctx.data.combatConfig.strongholdRecovery;
   const healed = Math.min(Math.floor(unit.hpMax * hpRatio), unit.hpMax - unit.hp);
   unit.hp += healed;
+  unit.mp = Math.min(unit.mp + mp, unit.mpMax);
 
   return [
     ...(healed > 0 ? [{ type: "healed" as const, officerId: unit.officerId, amount: healed }] : []),

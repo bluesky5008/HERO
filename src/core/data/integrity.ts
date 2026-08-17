@@ -8,6 +8,7 @@ import type {
   Pos,
   Sprite,
   Stage,
+  Tactic,
   Terrain,
   UnitClass,
 } from "./schemas";
@@ -26,6 +27,7 @@ export interface GameData {
   combatConfig: CombatConfig;
   terrain: Terrain[];
   classes: UnitClass[];
+  tactics: Tactic[];
   officers: Officer[];
   affinity: Affinity[];
   sprites: Record<string, Sprite>;
@@ -58,12 +60,16 @@ export function checkIntegrity(data: GameData): DataIssue[] {
 
   const terrainIds = new Set(data.terrain.map((t) => t.id));
   const classIds = new Set(data.classes.map((c) => c.id));
+  const tacticIds = new Set(data.tactics.map((t) => t.id));
 
   for (const id of duplicateIds(data.terrain.map((t) => t.id))) {
     issues.push(issue("terrain.json", `id=${id}`, `지형 ID가 중복 정의되었다: ${id}`));
   }
   for (const id of duplicateIds(data.classes.map((c) => c.id))) {
     issues.push(issue("classes.json", `id=${id}`, `병과 ID가 중복 정의되었다: ${id}`));
+  }
+  for (const id of duplicateIds(data.tactics.map((t) => t.id))) {
+    issues.push(issue("tactics.json", `id=${id}`, `책략 ID가 중복 정의되었다: ${id}`));
   }
   for (const id of duplicateIds(data.officers.map((o) => o.id))) {
     issues.push(issue("officers.json", `id=${id}`, `무장 ID가 중복 정의되었다: ${id}`));
@@ -105,6 +111,18 @@ export function checkIntegrity(data: GameData): DataIssue[] {
       );
     }
 
+    for (const tacticId of cls.tactics) {
+      if (!tacticIds.has(tacticId)) {
+        issues.push(
+          issue(
+            "classes.json",
+            `${at}.tactics`,
+            `병과 ${cls.id}가 배우는 책략 '${tacticId}'가 tactics.json에 없다`,
+          ),
+        );
+      }
+    }
+
     for (const [rule, ids] of [
       ["forbidden", cls.movementRules.forbidden],
       ["halved", cls.movementRules.halved],
@@ -116,6 +134,28 @@ export function checkIntegrity(data: GameData): DataIssue[] {
               "classes.json",
               `${at}.movementRules.${rule}`,
               `이동 규칙이 참조한 지형 '${terrainId}'가 terrain.json에 없다`,
+            ),
+          );
+        }
+      }
+    }
+  });
+
+  data.tactics.forEach((tactic, index) => {
+    const at = `tactics[${index}] (${tactic.id})`;
+
+    // 게이트가 데이터로 표현되므로(설계 §4.4) 오타 난 지형은 코드가 아니라 여기서만 잡을 수 있다.
+    for (const [field, ids] of [
+      ["terrainRequired", tactic.terrainRequired ?? []],
+      ["terrainBonus", Object.keys(tactic.terrainBonus)],
+    ] as const) {
+      for (const terrainId of ids) {
+        if (!terrainIds.has(terrainId)) {
+          issues.push(
+            issue(
+              "tactics.json",
+              `${at}.${field}`,
+              `책략 ${tactic.id}가 참조한 지형 '${terrainId}'가 terrain.json에 없다`,
             ),
           );
         }

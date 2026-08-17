@@ -39,6 +39,21 @@ describe("createBattleState", () => {
     expect(build({ level: 1 }).units[0]?.hpMax).toBe(1200);
   });
 
+  it("책략치 상한을 지력과 레벨로 계산하고 가득 채워 시작한다 ([상세 스펙 §1.5])", () => {
+    const liuBei = build({}).units[0]!;
+
+    // mpMax = floor(지력 74 / 4) + 레벨 5 = 18 + 5
+    expect(liuBei.mpMax).toBe(23);
+    expect(liuBei.mp).toBe(liuBei.mpMax);
+  });
+
+  it("지력이 같아도 레벨이 오르면 책략치 상한이 함께 오른다", () => {
+    const low = build({ level: 1 }).units[0]!;
+    const high = build({ level: 9 }).units[0]!;
+
+    expect(high.mpMax - low.mpMax).toBe(8);
+  });
+
   it("병과는 무장 데이터에서 가져온다", () => {
     expect(build({}).units[0]?.classId).toBe("sword_soldier");
   });

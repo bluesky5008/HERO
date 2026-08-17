@@ -1,5 +1,5 @@
 import type { GameData } from "../data/integrity";
-import type { Officer, Pos, Stage, StageUnit, UnitClass } from "../data/schemas";
+import type { CombatConfig, Officer, Pos, Stage, StageUnit, UnitClass } from "../data/schemas";
 
 /**
  * 전투 상태와 그 구성([전체 설계 §6.3], DES-01).
@@ -27,6 +27,10 @@ export interface Unit {
   confused: boolean;
   /** 다음 레벨까지의 누적 경험치. 임계에 닿을 때마다 레벨이 오르고 잔여분이 남는다([상세 스펙 §1.6]). */
   exp: number;
+  /** 책략치. 책략을 쓰면 줄고 거점 위 턴 시작에만 자연 회복한다([상세 스펙 §1.5]). */
+  mp: number;
+  /** 책략치 상한 — 지력과 레벨에서 파생된다 */
+  mpMax: number;
 }
 
 export interface BattleState {
@@ -72,6 +76,14 @@ export function terrainAt(ctx: BattleContext, [x, y]: Pos) {
 /** 레벨 1의 기준값에서 레벨업 횟수만큼 상한이 오른다([상세 스펙 §1.6]). */
 export function hpMaxOf(officer: Officer, level: number): number {
   return officer.growth.baseHp + officer.growth.hpPerLevel * (level - 1);
+}
+
+/**
+ * 책략치 상한 `floor(지력 / mpIntDivisor) + 레벨`([상세 스펙 §1.5]).
+ * 배치와 레벨업이 같은 식을 쓰도록 계산 경로를 하나로 둔다 — `hpMaxOf`와 같은 이유다.
+ */
+export function mpMaxOf(config: CombatConfig, officer: Officer, level: number): number {
+  return Math.floor(officer.int / config.mpIntDivisor) + level;
 }
 
 const posKey = ([x, y]: Pos): string => `${x},${y}`;
@@ -135,6 +147,7 @@ export function createBattleState(
       }
 
       const hpMax = hpMaxOf(officer, placement.level);
+      const mpMax = mpMaxOf(data.combatConfig, officer, placement.level);
       units.push({
         officerId: officer.id,
         classId: officer.classId,
@@ -148,6 +161,8 @@ export function createBattleState(
         acted: false,
         confused: false,
         exp: 0,
+        mp: mpMax,
+        mpMax,
       });
     }
   }

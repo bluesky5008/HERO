@@ -1,6 +1,6 @@
 import { formatIssues, loadGameData, type GameData } from "../../src/core/data/loader";
 import type { CombatConfig, Family, GameConfig, Pos, Stage } from "../../src/core/data/schemas";
-import { hpMaxOf, type BattleContext, type BattleState, type Side, type Unit } from "../../src/core/battle/state";
+import { hpMaxOf, mpMaxOf, type BattleContext, type BattleState, type Side, type Unit } from "../../src/core/battle/state";
 import { validAnimationSet, validCombatConfig, validConfig, validSprite } from "../data/fixtures";
 
 /**
@@ -38,14 +38,17 @@ const TERRAIN = [
   { id: "village", name: "마을", defenseBonus: 0.15, moveCost: moveCost(1), stronghold: true },
 ].map((terrain) => ({ placeholderColor: "#7fa650", stronghold: false, ...terrain }));
 
+// 병과별 사용 가능 책략은 [상세 스펙 §1.5]를 따른다 — 보병계=화계+병력회복, 궁병계=수계, 기병=공격 책략 없음, 군악대=사기회복.
 const CLASSES = [
-  { id: "sword_soldier", name: "단병", family: "infantry", movement: 5, attackMod: 8, defenseMod: 10 },
-  { id: "spear_soldier", name: "장병", family: "infantry", movement: 5, attackMod: 12, defenseMod: 14, movementRules: { forbidden: [], halved: ["forest"] }, attackRange: { min: 1, max: 1, directions: 8 as const } },
+  { id: "sword_soldier", name: "단병", family: "infantry", movement: 5, attackMod: 8, defenseMod: 10, tactics: ["fire_arrow", "mend"] },
+  { id: "spear_soldier", name: "장병", family: "infantry", movement: 5, attackMod: 12, defenseMod: 14, movementRules: { forbidden: [], halved: ["forest"] }, attackRange: { min: 1, max: 1, directions: 8 as const }, tactics: ["fire_arrow", "fire_dragon"] },
   { id: "light_cavalry", name: "경기병", family: "cavalry", movement: 7, attackMod: 12, defenseMod: 6, movementRules: { forbidden: ["forest"], halved: [] } },
-  { id: "archer", name: "궁병", family: "archer", movement: 5, attackMod: 10, defenseMod: 6, attackRange: { min: 1, max: 2, directions: 4 as const } },
+  { id: "archer", name: "궁병", family: "archer", movement: 5, attackMod: 10, defenseMod: 6, attackRange: { min: 1, max: 2, directions: 4 as const }, tactics: ["flood"] },
+  // 전 카테고리를 쓰는 유일한 병과([상세 스펙 §1.5]) — 지계 게이트를 시험하려면 이 병과가 있어야 한다.
+  { id: "sorcerer", name: "주술사", family: "sorcerer", movement: 4, attackMod: 6, defenseMod: 6, tactics: ["fire_arrow", "fire_dragon", "flood", "quake", "taunt", "bewilder", "mend", "cheer"] },
   // 인접한 적을 칠 수 없는 병과 — 최소 사거리가 실제로 걸리는지 보려면 min > 1인 데이터가 있어야 한다.
   { id: "catapult", name: "발석차", family: "archer", movement: 4, attackMod: 16, defenseMod: 4, attackRange: { min: 2, max: 3, directions: 4 as const } },
-  { id: "music_band", name: "군악대", family: "band", movement: 4, attackMod: 4, defenseMod: 8 },
+  { id: "music_band", name: "군악대", family: "band", movement: 4, attackMod: 4, defenseMod: 8, tactics: ["cheer", "taunt", "bewilder"] },
 ].map((cls) => ({
   tier: 1,
   upgradesTo: null,
@@ -56,6 +59,66 @@ const CLASSES = [
   flags: [],
   sprite: cls.id,
   ...cls,
+}));
+
+/**
+ * 카테고리별 최소 샘플. 지형·날씨 게이트를 실제로 자극하려면 화계·수계·지계가 모두 있어야 한다
+ * ([상세 스펙 §1.5]) — 게이트 판정 자체는 TASK-24가 구현한다.
+ */
+const TACTICS = [
+  {
+    id: "fire_arrow",
+    name: "화시",
+    category: "fire",
+    cost: 4,
+    baseDamage: 300,
+    range: 3,
+    terrainBonus: { forest: 1.25 },
+    weatherForbidden: ["rain"],
+  },
+  {
+    id: "fire_dragon",
+    name: "화룡",
+    category: "fire",
+    cost: 8,
+    baseDamage: 600,
+    range: 4,
+    area: "cross5" as const,
+    terrainBonus: { forest: 1.25 },
+    weatherForbidden: ["rain"],
+  },
+  {
+    id: "flood",
+    name: "수공",
+    category: "water",
+    cost: 6,
+    baseDamage: 400,
+    range: 3,
+    terrainRequired: ["plain"],
+    weatherBonus: { rain: 1.25 },
+  },
+  {
+    id: "quake",
+    name: "낙석",
+    category: "earth",
+    cost: 6,
+    baseDamage: 400,
+    range: 3,
+    terrainRequired: ["mountain"],
+  },
+  { id: "taunt", name: "도발", category: "moraleDown", cost: 3, range: 3, effect: "moraleDown" },
+  { id: "bewilder", name: "교란", category: "moraleDown", cost: 5, range: 3, effect: "confuse" },
+  { id: "mend", name: "치료", category: "heal", cost: 4, baseDamage: 300, range: 2, effect: "healHp" },
+  { id: "cheer", name: "격려", category: "heal", cost: 3, range: 2, effect: "healMorale" },
+].map((tactic) => ({
+  baseDamage: 0,
+  area: "single" as const,
+  terrainRequired: null,
+  terrainBonus: {},
+  weatherForbidden: [],
+  weatherBonus: {},
+  effect: "damage",
+  ...tactic,
 }));
 
 /** 상성 고리: 기병 > 보병 > 궁병 > 기병(방어측 배수 — 유리 0.75 / 불리 1.25). */
@@ -73,6 +136,7 @@ const OFFICERS = [
   { id: "bow", name: "궁병 장수", classId: "archer" },
   { id: "siege", name: "발석차 장수", classId: "catapult" },
   { id: "band", name: "군악대 장수", classId: "music_band" },
+  { id: "mage", name: "주술사 장수", classId: "sorcerer" },
 ].map((officer) => ({
   war: 50,
   int: 50,
@@ -90,6 +154,7 @@ export interface UnitSpec {
   hp?: number;
   confused?: boolean;
   exp?: number;
+  mp?: number;
 }
 
 export interface BattleFixtureOptions {
@@ -111,6 +176,7 @@ function gameData(options: BattleFixtureOptions): GameData {
     combatConfig: { ...validCombatConfig, ...options.combatConfig },
     terrain: TERRAIN,
     classes: CLASSES,
+    tactics: TACTICS,
     officers: OFFICERS.map((officer) => ({ ...officer, ...options.officers?.[officer.id] })),
     affinity: families.flatMap((attacker) =>
       families.map((defender) => ({
@@ -173,6 +239,7 @@ export function makeBattle(
 
     const level = spec.level ?? 5;
     const hpMax = hpMaxOf(officer, level);
+    const mpMax = mpMaxOf(data.combatConfig, officer, level);
     return {
       officerId: officer.id,
       classId: officer.classId,
@@ -186,6 +253,8 @@ export function makeBattle(
       acted: false,
       confused: spec.confused ?? false,
       exp: spec.exp ?? 0,
+      mp: spec.mp ?? mpMax,
+      mpMax,
     };
   });
 

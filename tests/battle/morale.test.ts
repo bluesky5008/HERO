@@ -218,6 +218,29 @@ describe("beginPhase — 거점 회복 (턴 시작 ②)", () => {
     expect(events).toContainEqual({ type: "healed", officerId: "foot", amount: 140 });
   });
 
+  it("거점 위 부대는 책략치도 회복한다 ([상세 스펙 §1.5] — 자연 회복은 거점에서만)", () => {
+    const b = battle([{ ...at("foot", "player", VILLAGE), mp: 0 }]);
+    const { mp } = b.ctx.data.combatConfig.strongholdRecovery;
+
+    beginPhase(b.ctx, b.state, createRng(1));
+
+    expect(b.unit("foot").mp).toBe(mp);
+  });
+
+  it("회복한 책략치는 상한을 넘지 않는다", () => {
+    const b = battle([at("foot", "player", VILLAGE)]);
+    beginPhase(b.ctx, b.state, createRng(1));
+
+    expect(b.unit("foot").mp).toBe(b.unit("foot").mpMax);
+  });
+
+  it("거점 밖 부대는 책략치를 회복하지 않는다", () => {
+    const b = battle([{ ...at("foot", "player", [1, 1]), mp: 0 }]);
+    beginPhase(b.ctx, b.state, createRng(1));
+
+    expect(b.unit("foot").mp).toBe(0);
+  });
+
   it("거점 밖 부대는 회복하지 않는다", () => {
     const b = battle([{ ...at("foot", "player", [1, 1]), morale: 50, hp: 1000 }]);
     beginPhase(b.ctx, b.state, createRng(1));
