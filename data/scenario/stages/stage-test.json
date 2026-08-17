@@ -1,0 +1,26 @@
+{
+  "id": "stage-test",
+  "name": "테스트 전장 (파이프라인 검증용)",
+  "weather": "clear",
+  "map": {
+    "width": 20,
+    "height": 15,
+    "tiles": [
+      ["mountain", "mountain", "mountain", "mountain", "mountain", "mountain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "mountain", "mountain", "mountain", "mountain", "mountain", "mountain"],
+      ["mountain", "mountain", "mountain", "mountain", "plain", "plain", "plain", "plain", "forest", "forest", "plain", "plain", "plain", "plain", "plain", "mountain", "mountain", "mountain", "mountain", "mountain"],
+      ["mountain", "mountain", "plain", "plain", "plain", "forest", "forest", "forest", "forest", "forest", "forest", "plain", "plain", "plain", "plain", "plain", "plain", "mountain", "mountain", "mountain"],
+      ["plain", "plain", "plain", "plain", "forest", "forest", "plain", "plain", "plain", "plain", "forest", "forest", "plain", "plain", "plain", "plain", "plain", "plain", "mountain", "mountain"],
+      ["plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "wasteland", "wasteland", "plain", "plain", "plain", "plain", "mountain"],
+      ["river", "river", "river", "river", "river", "river", "river", "bridge", "bridge", "river", "river", "river", "river", "river", "wasteland", "wasteland", "plain", "plain", "plain", "plain"],
+      ["river", "river", "river", "river", "river", "river", "river", "bridge", "bridge", "river", "river", "river", "river", "river", "wasteland", "wasteland", "plain", "plain", "plain", "plain"],
+      ["plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain"],
+      ["plain", "plain", "village", "village", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "forest", "forest", "plain", "plain", "plain", "plain"],
+      ["plain", "plain", "village", "village", "plain", "plain", "plain", "plain", "wasteland", "wasteland", "plain", "plain", "plain", "forest", "forest", "forest", "forest", "plain", "plain", "plain"],
+      ["plain", "plain", "plain", "plain", "plain", "plain", "plain", "wasteland", "wasteland", "wasteland", "wasteland", "plain", "plain", "forest", "forest", "forest", "forest", "plain", "plain", "plain"],
+      ["plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "wasteland", "wasteland", "plain", "plain", "plain", "plain", "forest", "forest", "plain", "plain", "plain", "plain"],
+      ["mountain", "mountain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "plain", "mountain", "mountain"],
+      ["mountain", "mountain", "mountain", "plain", "plain", "plain", "castle_gate", "castle_gate", "plain", "plain", "plain", "plain", "plain", "plain", "mountain", "mountain", "mountain", "mountain", "mountain", "mountain"],
+      ["mountain", "mountain", "mountain", "mountain", "castle", "castle", "castle", "castle", "castle", "castle", "plain", "plain", "plain", "plain", "mountain", "mountain", "mountain", "mountain", "mountain", "mountain"]
+    ]
+  }
+}

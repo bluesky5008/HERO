@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>삼국지 영걸전 리메이크</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #14161a;
+        color: #e6e6e6;
+        font-family: "Malgun Gothic", system-ui, sans-serif;
+        overflow: hidden;
+      }
+      #app {
+        display: grid;
+        place-items: center;
+        height: 100%;
+      }
+      #boot-error {
+        display: none;
+        max-width: 60rem;
+        padding: 1.5rem;
+        white-space: pre-wrap;
+        font-family: Consolas, monospace;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #ff9d9d;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"><pre id="boot-error"></pre></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

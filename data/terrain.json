@@ -1,0 +1,146 @@
+[
+  {
+    "id": "plain",
+    "name": "평지",
+    "defenseBonus": 0,
+    "moveCost": {
+      "infantry": 1,
+      "cavalry": 1,
+      "archer": 1,
+      "transport": 1,
+      "band": 1,
+      "sorcerer": 1,
+      "special": 1
+    },
+    "placeholderColor": "#7fa650",
+    "stronghold": false
+  },
+  {
+    "id": "forest",
+    "name": "숲",
+    "defenseBonus": 0.1,
+    "moveCost": {
+      "infantry": 1,
+      "cavalry": "blocked",
+      "archer": 1,
+      "transport": 2,
+      "band": 2,
+      "sorcerer": 1,
+      "special": 1
+    },
+    "placeholderColor": "#3f6b34",
+    "stronghold": false
+  },
+  {
+    "id": "wasteland",
+    "name": "황무지",
+    "defenseBonus": 0.05,
+    "moveCost": {
+      "infantry": 1,
+      "cavalry": 1,
+      "archer": 1,
+      "transport": 2,
+      "band": 2,
+      "sorcerer": 1,
+      "special": 1
+    },
+    "placeholderColor": "#a8905c",
+    "stronghold": false
+  },
+  {
+    "id": "mountain",
+    "name": "산",
+    "defenseBonus": 0,
+    "moveCost": {
+      "infantry": "blocked",
+      "cavalry": "blocked",
+      "archer": "blocked",
+      "transport": "blocked",
+      "band": "blocked",
+      "sorcerer": "blocked",
+      "special": 1
+    },
+    "placeholderColor": "#7a6a5a",
+    "stronghold": false
+  },
+  {
+    "id": "river",
+    "name": "강",
+    "defenseBonus": 0,
+    "moveCost": {
+      "infantry": "blocked",
+      "cavalry": "blocked",
+      "archer": "blocked",
+      "transport": "blocked",
+      "band": "blocked",
+      "sorcerer": "blocked",
+      "special": "blocked"
+    },
+    "placeholderColor": "#3f6ea8",
+    "stronghold": false
+  },
+  {
+    "id": "bridge",
+    "name": "다리",
+    "defenseBonus": 0,
+    "moveCost": {
+      "infantry": 1,
+      "cavalry": 1,
+      "archer": 1,
+      "transport": 1,
+      "band": 1,
+      "sorcerer": 1,
+      "special": 1
+    },
+    "placeholderColor": "#b08a52",
+    "stronghold": false
+  },
+  {
+    "id": "village",
+    "name": "마을",
+    "defenseBonus": 0.15,
+    "moveCost": {
+      "infantry": 1,
+      "cavalry": 1,
+      "archer": 1,
+      "transport": 1,
+      "band": 1,
+      "sorcerer": 1,
+      "special": 1
+    },
+    "placeholderColor": "#c9a24d",
+    "stronghold": true
+  },
+  {
+    "id": "castle_gate",
+    "name": "성문",
+    "defenseBonus": 0.2,
+    "moveCost": {
+      "infantry": 1,
+      "cavalry": 1,
+      "archer": 1,
+      "transport": 1,
+      "band": 1,
+      "sorcerer": 1,
+      "special": 1
+    },
+    "placeholderColor": "#8e8e96",
+    "stronghold": true
+  },
+  {
+    "id": "castle",
+    "name": "성내",
+    "defenseBonus": 0.25,
+    "moveCost": {
+      "infantry": 1,
+      "cavalry": 1,
+      "archer": 1,
+      "transport": 1,
+      "band": 1,
+      "sorcerer": 1,
+      "special": 1
+    },
+    "placeholderColor": "#6f6f78",
+    "stronghold": true
+  }
+]

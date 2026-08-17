@@ -27,6 +27,7 @@
 | bidirectional | decision | [ADR-004: 원작 맵 동일 재현과 트레이싱 도구 선행](./work/20260817-ygj-remake-baseline/ADR-004-원작-맵-동일-재현과-트레이싱-도구-선행.md) | FR-14, FR-15 | |
 | bidirectional | decision | [ADR-005: 장수 에디터 오버레이 전역 적용](./work/20260817-ygj-remake-baseline/ADR-005-장수-에디터-오버레이-전역-적용.md) | FR-16 | |
 | bidirectional | decision | [ADR-006: 릴리스 빌드 GitHub Actions 자동화](./work/20260817-ygj-remake-baseline/ADR-006-릴리스-빌드-GitHub-Actions-자동화.md) | FR-21 | |
+| output | implementation | [PLAN-ygj-remake: 구현 계획](./plan.md) | AC-01 (M0) | 이 요구사항을 구현·검증하는 계획 |
 | related | related | [결정 등록부](./decisions.md) | document | ADR 전체 목록 |
 
 ## 문제와 목적

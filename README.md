@@ -6,8 +6,9 @@ DOS용 「삼국지 영걸전」(KOEI, 1995)의 게임 시스템과 플레이 �
 
 ## 현재 상태
 
-- **요구사항·설계 기준선 v1 승인** (2026-08-17) — wf-design 워크플로우 완료.
-- 구현은 M0(프로젝트 뼈대)부터 진행 예정.
+- **요구사항·설계 기준선 v1 승인** (2026-08-17)
+- **M0 뼈대 완료** — 데이터 스키마·검증 파이프라인과 타일맵 렌더가 동작한다. `npm run dev`로 테스트 전장이 렌더되고 `npm run validate`가 데이터 참조 오류를 잡는다.
+- 다음: M1 전투 프로토타입
 
 ## 핵심 특징 (계획)
 
@@ -28,13 +29,14 @@ TypeScript(strict) · Vite · PixiJS v8(맵/유닛 렌더) · HTML+CSS DOM 오�
 | [docs/requirements.md](./docs/requirements.md) | 요구사항 기준선 v1 — 기능 21건, 비기능 8건, 인수 조건 12건 |
 | [docs/design.md](./docs/design.md) | SW 설계 기준선 v1 — 설계 요소 14건, 데이터 계약, 검증 전략 |
 | [docs/decisions.md](./docs/decisions.md) | 결정 등록부 — ADR 전체 목록 |
-| [docs/work/](./docs/work/) | 작업별 설계 결정 기록(ADR·DCR) |
+| [docs/plan.md](./docs/plan.md) | 구현 계획 — 마일스톤 사이클별 작업 목록과 계획 트리 |
+| [docs/work/](./docs/work/) | 작업별 기록 — 설계 결정(ADR·DCR)과 구현·검증 기록 |
 
 ## 로드맵
 
 | 마일스톤 | 내용 |
 |---|---|
-| M0 | 프로젝트 뼈대: Vite+TS+PixiJS 스캐폴딩, zod 스키마, validate 스크립트 |
+| ~~M0~~ ✅ | 프로젝트 뼈대: Vite+TS+PixiJS 스캐폴딩, zod 스키마, validate 스크립트 |
 | M1 | 전투 프로토타입: 타일맵, 이동/공격, 상성, 턴 교대, 1단계 AI |
 | M2 | 전투 완성: 책략, 아이템, 사기·혼란, 경험치·승급, 일기토, 이벤트, 실측 튜닝 |
 | M3 | 캠페인 루프: 씬 전환, 이벤트/분기, 상점·편성, 세이브(턴 중간 포함) |
@@ -44,14 +46,23 @@ TypeScript(strict) · Vite · PixiJS v8(맵/유닛 렌더) · HTML+CSS DOM 오�
 | M5 | 비주얼 패스: 플레이스홀더 → 취향 그래픽·사운드 교체 |
 | M6 | 패키징: Tauri 통합, 윈도우 exe·맥 .dmg, GitHub Actions 릴리스 자동화 |
 
-## 개발 (M0 이후 사용 가능)
+## 개발
+
+Node.js LTS(v24 기준)가 필요하다.
 
 ```bash
 npm install
-npm run dev       # 브라우저에서 실행
-npm run validate  # 데이터 참조 무결성 검사
-npm test          # 전투 로직 단위 테스트
+npm run dev       # 브라우저에서 실행 (http://localhost:5173)
+npm run validate  # 데이터 스키마·참조 무결성 전수 검사 (문제 시 exit 1)
+npm test          # 코어 로직 단위 테스트 (Vitest)
+npm run build     # 타입 검사 + 프로덕션 빌드
 ```
+
+`npm run validate -- <경로>`로 임의의 데이터 폴더를 검사할 수도 있다.
+
+### 데이터 개조
+
+게임 콘텐츠는 전부 [data/](./data/)의 JSON이며 엔진은 이를 해석만 한다. 병과·지형·상성·스프라이트 매핑을 고친 뒤 `npm run validate`로 참조 누락을 확인하면 된다. 스프라이트 시트가 없는 항목은 플레이스홀더 색으로 렌더되므로 그래픽 없이도 시스템을 완성할 수 있다.
 
 ## 저작권 고지
 

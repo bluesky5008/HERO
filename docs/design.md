@@ -27,6 +27,7 @@
 | bidirectional | decision | [ADR-004: 원작 맵 동일 재현과 트레이싱 도구 선행](./work/20260817-ygj-remake-baseline/ADR-004-원작-맵-동일-재현과-트레이싱-도구-선행.md) | DES-11, DES-12 | |
 | bidirectional | decision | [ADR-005: 장수 에디터 오버레이 전역 적용](./work/20260817-ygj-remake-baseline/ADR-005-장수-에디터-오버레이-전역-적용.md) | DES-02, DES-03, DES-09 | |
 | bidirectional | decision | [ADR-006: 릴리스 빌드 GitHub Actions 자동화](./work/20260817-ygj-remake-baseline/ADR-006-릴리스-빌드-GitHub-Actions-자동화.md) | DES-14 | |
+| output | implementation | [PLAN-ygj-remake: 구현 계획](./plan.md) | TASK-01~09 (M0) | 이 설계를 구현하는 계획 |
 | related | related | [결정 등록부](./decisions.md) | document | ADR 전체 목록 |
 
 ## 설계 목표와 제약
@@ -168,10 +169,10 @@ data/*.json ──(zod 검증·사용자 오버레이 병합: DES-03)──▶ c
 
 ## 인계
 
-- 다음 단계 또는 워크플로우: wf-implement (M0 뼈대부터, [전체 설계 §8](../yeonggeoljeon-remake-design.md) 로드맵을 계획 입력으로 사용)
+- 다음 단계 또는 워크플로우: wf-implement — [PLAN-ygj-remake](./plan.md)에서 진행 중이다(M0 완료, M1 예정)
 - 시작 조건: 충족 — 기준선 v1 승인 완료(2026-08-17)
 - 입력 문서와 기준선: [REQ-ygj-remake](./requirements.md), 본 문서, [결정 등록부](./decisions.md)의 ADR-001~006, 선행 명세 2종([전체 설계](../yeonggeoljeon-remake-design.md)·[상세 스펙](../yeonggeoljeon-remake-spec-detail.md))
 - 완료된 항목: 요구사항 명세(FR 21·NFR 8·AC 12), SW 설계(DES 14), ADR 6건, 결정 등록부, 추적 연결
-- 미완료 항목: 구현 전체(M0~M6)
+- 미완료 항목: 구현 M1~M6 (M0는 [완료](./work/20260817-m0-skeleton/work-log.md))
 - 차단 요인: 없음
-- 다음 행동: wf-implement 계획 수립(M0 뼈대)부터 진행
+- 다음 행동: M1(전투 프로토타입) 사이클 계획 수립
