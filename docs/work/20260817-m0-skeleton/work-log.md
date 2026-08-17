@@ -78,7 +78,7 @@ flowchart TD
   - 사실: `node`·`npm` 미설치. winget은 사용 가능하나 현재 세션은 비관리자(`Elevated: False`)이며, Node.js MSI는 관리자 승격(UAC)을 유발해 비대화형 세션을 정지시킬 위험이 있었다.
   - 사실: Node.js LTS는 v24.19.0(Krypton), `https://nodejs.org/dist/index.json`으로 네트워크 접근 가능.
 - 결정과 이유: 공식 배포 zip을 사용자 영역 `%LOCALAPPDATA%\Programs\nodejs`에 전개하고 **사용자 PATH**에만 등록했다. 관리자 권한이 필요 없고(UAC 정지 위험 없음), 시스템 레지스트리·Program Files를 건드리지 않으며, 폴더 삭제와 PATH 항목 제거만으로 완전히 되돌릴 수 있기 때문이다. 기각한 대안: `winget install`(UAC 정지 위험, 시스템 범위 변경).
-  - 승인 근거: Node.js·npm은 승인된 [ADR-002 기술 스택](../20260817-ygj-remake-baseline/ADR-002-기술-스택-선정.md)이 요구하는 불가피한 전제이고, 설치는 로컬·되돌릴 수 있는 변경이므로 [wf-implement §2.3 자율 진행](../../../.claude/skills/wf-implement/SKILL.md) 범위로 판단했다. 외부 시스템 상태 변경이나 비가역 작업이 아니다.
+  - 승인 근거: Node.js·npm은 승인된 [ADR-002 기술 스택](../20260817-ygj-remake-baseline/ADR-002-기술-스택-선정.md)이 요구하는 불가피한 전제이고, 설치는 로컬·되돌릴 수 있는 변경이므로 wf-implement §2.3(자율 진행과 승인) 범위로 판단했다. 외부 시스템 상태 변경이나 비가역 작업이 아니다.
 - 실행한 검증: `node --version` → `v24.19.0`, `npm --version` → `11.17.0`.
 - 결과: 성공. 다만 도구 셸은 Claude Code 프로세스의 낡은 환경을 상속하므로 이번 세션의 명령에는 `$env:Path += ";$env:LOCALAPPDATA\Programs\nodejs"` 접두가 필요하다. 사용자가 새로 여는 터미널에는 사용자 PATH가 적용된다.
 - 기준선 영향: 없음. [REQ-ygj-remake](../../requirements.md)의 가정이 확인된 것이며 요구사항·설계의 의미는 바뀌지 않았다(DCR 불필요).
@@ -143,7 +143,7 @@ flowchart TD
 
 ### 2026-08-17 — TASK-09 자체 리뷰·검증·통합
 
-- 수행 내용: [wf-implement §3.5](../../../.claude/skills/wf-implement/SKILL.md) 항목을 점검하고 전체 검증을 실행했다.
+- 수행 내용: wf-implement §3.5(자체 리뷰) 항목을 점검하고 전체 검증을 실행했다.
 - 변경 파일: `vite.config.ts`(정리), `docs/plan.md`, `README.md`, 본 기록
 - 발견 사항과 수정: `vite.config.ts`의 `publicDir: "public"`와 `server.open: false`는 Vite 기본값과 같은 보일러플레이트라 제거했다.
 - 실행한 검증: 아래 [인수 조건별 결과](#인수-조건별-결과) 참조.
