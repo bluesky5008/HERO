@@ -117,6 +117,7 @@ export const validCombatConfig = {
   confusion: { threshold: 30, chance: 0.5 },
   strongholdRecovery: { hpRatio: 0.1, morale: 5, mp: 2 },
   mpIntDivisor: 4,
+  tactic: { hitBase: 50, hitMin: 10, hitMax: 100, damageIntDivisor: 200, strongholdBlocks: ["damage"] },
   maxLevel: 99,
   exp: { divisor: 10, min: 1, max: 40, defeatBonus: 45, perLevel: 100 },
 };

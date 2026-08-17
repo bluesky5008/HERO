@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand, BattleCommandError } from "../../src/core/battle/commands";
 import { changeMorale } from "../../src/core/battle/morale";
-import { beginPhase } from "../../src/core/battle/turn";
+import { beginPhase, endPhase, isPhaseComplete } from "../../src/core/battle/turn";
 import { createRng } from "../../src/core/rng";
 import type { Pos } from "../../src/core/data/schemas";
 import { makeBattle, type BattleFixtureOptions, type UnitSpec } from "./fixtures";
@@ -188,6 +188,55 @@ describe("beginPhase — 혼란 판정 (턴 시작 ④)", () => {
     // 값이 갈리는 시드를 골랐다 — 전부 같은 결과라면 난수가 판정에 쓰이지 않아도 통과한다.
     expect(run()).toEqual([true, false, false]);
     expect(run()).toEqual(run());
+  });
+});
+
+describe("혼란은 한 턴짜리 상태다 ([상세 스펙 §1.4]의 \"그 턴 조작 불가\")", () => {
+  /** 사기와 무관하게 혼란이 걸린 상태 — 교란 책략이 만드는 상황이다. */
+  const struck = () =>
+    battle([
+      { ...at("foot", "player", [1, 1]), morale: 100, confused: true },
+      at("foot2", "enemy", [2, 1]),
+    ]);
+
+  it("사기가 높아도 혼란이면 그 턴을 잃는다", () => {
+    const b = struck();
+    beginPhase(b.ctx, b.state, createRng(1));
+
+    expect(b.unit("foot").acted).toBe(true);
+  });
+
+  it("그래서 전원이 혼란이어도 페이즈가 끝난다", () => {
+    const b = struck();
+    beginPhase(b.ctx, b.state, createRng(1));
+
+    expect(isPhaseComplete(b.state)).toBe(true);
+  });
+
+  it("차례를 마치면 혼란이 풀려 다음 턴에는 움직인다", () => {
+    const b = struck();
+    beginPhase(b.ctx, b.state, createRng(1));
+
+    endPhase(b.state); // 플레이어 → 적: 차례를 마친 진영의 혼란이 풀린다
+    expect(b.unit("foot").confused).toBe(false);
+
+    endPhase(b.state); // 적 → 플레이어
+    beginPhase(b.ctx, b.state, createRng(1));
+    expect(b.unit("foot").acted).toBe(false);
+  });
+
+  it("사기가 낮으면 턴마다 다시 판정하므로 혼란이 이어질 수 있다", () => {
+    const b = battle([{ ...at("foot", "player", [1, 1]), morale: 5 }], {
+      combatConfig: { confusion: { threshold: 30, chance: 1 } },
+    });
+
+    beginPhase(b.ctx, b.state, createRng(1));
+    expect(b.unit("foot").confused).toBe(true);
+
+    endPhase(b.state);
+    endPhase(b.state);
+    beginPhase(b.ctx, b.state, createRng(1));
+    expect(b.unit("foot").confused).toBe(true);
   });
 });
 

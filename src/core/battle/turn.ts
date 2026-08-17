@@ -51,8 +51,15 @@ export function isPhaseComplete(state: BattleState): boolean {
  * 현재 페이즈를 끝내고 다음 진영에 차례를 넘긴다. 적 페이즈가 끝나면 턴이 오른다.
  * 행동 기록은 차례를 받는 진영의 것만 지운다 — 방금 움직인 진영의 부대는
  * 자기 차례가 돌아올 때까지 "행동을 마친" 모습으로 화면에 남아야 한다.
+ * 반대로 혼란은 차례를 마친 진영의 것을 지운다(아래 참조).
  */
 export function endPhase(state: BattleState): void {
+  // 혼란은 한 턴짜리다([상세 스펙 §1.4]) — 차례를 마친 진영의 혼란을 여기서 푼다.
+  // 사기가 여전히 낮으면 다음 턴 시작 판정에서 다시 걸리고, 책략으로 걸린 혼란은 한 턴만 유효하다.
+  for (const unit of state.units) {
+    if (unit.side === state.phase) unit.confused = false;
+  }
+
   state.phase = state.phase === "player" ? "enemy" : "player";
   if (state.phase === "player") state.turn += 1;
 

@@ -11,8 +11,8 @@
 ## 요약
 
 - 목적: 승인된 기준선 v1을 마일스톤 단위로 구현하기 위한 저장소 현행 계획. 진행 중인 사이클은 **M2 전투 완성**이다.
-- 현재 결론 또는 상태: **M0 사이클 완료**(TASK-01~09, 검증 4/4 성공, [기록](./work/20260817-m0-skeleton/work-log.md)). **M1 사이클 완료**(TASK-10~20, 검증 VER-05~08 4/4 충족, [기록](./work/20260817-m1-battle-prototype/work-log.md)) — 화면에서 전투 한 판을 승리까지 완주했고 테스트 184건·타입 검사·데이터 검증·빌드가 모두 성공했다. **M2 사이클 진행 중**(3/14) — 작업 14건(TASK-21~34)과 검증 7건(VER-09~15)을 아래에 정의했고, [TASK-21](#task-21-사기혼란과-턴-시작-처리)(사기·혼란·턴 시작 처리)·[TASK-22](#task-22-경험치레벨업)(경험치·레벨업)·[TASK-23](#task-23-책략-데이터-계약과-책략치mp)(책략 데이터 계약과 책략치)을 완료했다(2026-08-18, 테스트 262건·validate·build 통과).
-- 다음 행동: [TASK-24](#task-24-책략-실행-커맨드)부터 계획 순서대로 구현한다(wf-implement §3.3 TDD 사이클). 진행 상태는 이 문서의 작업 목록과 [M2 작업 기록](./work/20260818-m2-battle-complete/work-log.md)에 갱신한다.
+- 현재 결론 또는 상태: **M0 사이클 완료**(TASK-01~09, 검증 4/4 성공, [기록](./work/20260817-m0-skeleton/work-log.md)). **M1 사이클 완료**(TASK-10~20, 검증 VER-05~08 4/4 충족, [기록](./work/20260817-m1-battle-prototype/work-log.md)) — 화면에서 전투 한 판을 승리까지 완주했고 테스트 184건·타입 검사·데이터 검증·빌드가 모두 성공했다. **M2 사이클 진행 중**(3/14) — 작업 14건(TASK-21~34)과 검증 7건(VER-09~15)을 아래에 정의했고, [TASK-21](#task-21-사기혼란과-턴-시작-처리)(사기·혼란·턴 시작 처리)·[TASK-22](#task-22-경험치레벨업)(경험치·레벨업)·[TASK-23](#task-23-책략-데이터-계약과-책략치mp)(책략 데이터 계약과 책략치)·[TASK-24](#task-24-책략-실행-커맨드)(책략 실행 커맨드)를 완료했다(2026-08-18, 테스트 311건·validate·build 통과).
+- 다음 행동: [TASK-25](#task-25-아이템-데이터-계약과-장비-효과)부터 계획 순서대로 구현한다(wf-implement §3.3 TDD 사이클). 진행 상태는 이 문서의 작업 목록과 [M2 작업 기록](./work/20260818-m2-battle-complete/work-log.md)에 갱신한다.
 
 ## 문서 연결
 
@@ -57,11 +57,11 @@
 [✓] [작업] 20260817-m1-battle-prototype — M1 전투 프로토타입 .. completed (11/11)      2026-08-17 23:39
     └─ 상세 트리 스냅숏: work-log.md의 계획 트리 절
 
-[~] [작업] 20260818-m2-battle-complete — M2 전투 완성 ..... in-progress (3/14)  depends: M1
+[~] [작업] 20260818-m2-battle-complete — M2 전투 완성 ..... in-progress (4/14)  depends: M1
     ├─ [✓] TASK-21 구현: 사기·혼란과 턴 시작 처리          completed  2026-08-18 00:45
     ├─ [✓] TASK-22 구현: 경험치·레벨업                    completed  2026-08-18 01:10
     ├─ [✓] TASK-23 구현: 책략 데이터 계약과 책략치(MP)     completed  2026-08-18 07:47
-    ├─ [ ] TASK-24 구현: 책략 실행 커맨드                  depends: TASK-21, TASK-22, TASK-23
+    ├─ [✓] TASK-24 구현: 책략 실행 커맨드                  completed  2026-08-18 08:30
     ├─ [ ] TASK-25 구현: 아이템 데이터 계약과 장비 효과
     ├─ [ ] TASK-26 구현: 아이템 사용과 승급·계열 전환      depends: TASK-22, TASK-25
     ├─ [ ] TASK-27 구현: 병과 플래그와 반격
@@ -78,13 +78,13 @@
 flowchart TD
     M0["M0 뼈대 (9/9)<br/>20260817-m0-skeleton"]:::done
     M1["M1 전투 프로토타입 (11/11)<br/>20260817-m1-battle-prototype"]:::done
-    M2["M2 전투 완성 (3/14)<br/>20260818-m2-battle-complete"]:::active
+    M2["M2 전투 완성 (4/14)<br/>20260818-m2-battle-complete"]:::active
     M0 -. depends .-> M1
     M1 -. depends .-> M2
     M2 --> T21["TASK-21 사기·혼란·턴 시작 처리"]:::done
     M2 --> T22["TASK-22 경험치·레벨업"]:::done
     M2 --> T23["TASK-23 책략 데이터·책략치"]:::done
-    M2 --> T24["TASK-24 책략 실행"]:::todo
+    M2 --> T24["TASK-24 책략 실행"]:::done
     M2 --> T25["TASK-25 아이템 데이터·장비 효과"]:::todo
     M2 --> T26["TASK-26 아이템 사용·승급"]:::todo
     M2 --> T27["TASK-27 병과 플래그·반격"]:::todo
@@ -229,7 +229,7 @@ flowchart TD
 
 #### TASK-24: 책략 실행 커맨드
 
-- 상태: pending
+- 상태: completed (2026-08-18 — [수행 기록](./work/20260818-m2-battle-complete/work-log.md#2026-08-18--task-24-책략-실행-커맨드))
 - 상위: 없음
 - 목표: `UseTactic` 커맨드가 명중·피해·회복·상태 변화를 규칙대로 적용하고, 지형·날씨·거점 게이트가 사용을 막는다.
 - 관련 요구사항과 설계: [FR-04](./requirements.md#기능-요구사항), [NFR-01](./requirements.md#비기능-요구사항), [AC-03](./requirements.md#인수-조건), [DES-01](./design.md#컴포넌트와-책임) — 규칙 정본 [상세 스펙 §1.5](../yeonggeoljeon-remake-spec-detail.md)
@@ -422,10 +422,10 @@ VER-04는 계획 작성 시 "스프라이트 매핑 누락 시 폴백"으로 적
 - 다음 단계 또는 워크플로우: 아래 M2 작업 목록을 wf-implement §3.3의 TDD 사이클로 구현한다. 진행 상태는 이 문서와 [M2 작업 기록](./work/20260818-m2-battle-complete/work-log.md)에 함께 갱신한다.
 - 시작 조건: 충족 — 기준선 v1 승인 완료(2026-08-17), Node.js·npm 사용 가능, M0·M1 완료, 저장소 작업 트리 깨끗함(2026-08-18 `git status` 확인), 자동 게이트 4종 통과 상태
 - 입력 문서와 기준선: [REQ-ygj-remake](./requirements.md), [DESIGN-ygj-remake](./design.md), [결정 등록부](./decisions.md), [상세 스펙](../yeonggeoljeon-remake-spec-detail.md), [WORK-20260817-m0-skeleton](./work/20260817-m0-skeleton/work-log.md), [WORK-20260817-m1-battle-prototype](./work/20260817-m1-battle-prototype/work-log.md)
-- 완료된 항목: M0 사이클 TASK-01~09(검증 VER-01~04), M1 사이클 TASK-10~20(검증 VER-05~08), **M2 계획 수립**(TASK-21~34, VER-09~15, 계획 트리 재생성 — 2026-08-18), **M2 [TASK-21](#task-21-사기혼란과-턴-시작-처리)**(사기·혼란·턴 시작 처리)·**[TASK-22](#task-22-경험치레벨업)**(경험치·레벨업)·**[TASK-23](#task-23-책략-데이터-계약과-책략치mp)**(책략 데이터 계약과 책략치 — 전부 2026-08-18)
-- 미완료 항목: M2 구현 TASK-24~34(3/14 완료), M3~M6 전부
+- 완료된 항목: M0 사이클 TASK-01~09(검증 VER-01~04), M1 사이클 TASK-10~20(검증 VER-05~08), **M2 계획 수립**(TASK-21~34, VER-09~15, 계획 트리 재생성 — 2026-08-18), **M2 [TASK-21](#task-21-사기혼란과-턴-시작-처리)**(사기·혼란·턴 시작 처리)·**[TASK-22](#task-22-경험치레벨업)**(경험치·레벨업)·**[TASK-23](#task-23-책략-데이터-계약과-책략치mp)**(책략 데이터 계약과 책략치)·**[TASK-24](#task-24-책략-실행-커맨드)**(책략 실행 커맨드 — 전부 2026-08-18)
+- 미완료 항목: M2 구현 TASK-25~34(4/14 완료), M3~M6 전부
 - 차단 요인: 없음
-- 다음 행동: [TASK-24 책략 실행 커맨드](#task-24-책략-실행-커맨드)의 선행 테스트(`tests/battle/tactics.test.ts`)를 먼저 작성해 실패를 확인한 뒤 구현한다. 착수 시 TASK-24의 상태를 `in-progress`로 바꾸고 같은 변경에서 [계획 트리](#계획-트리)를 재생성한다
+- 다음 행동: [TASK-25 아이템 데이터 계약과 장비 효과](#task-25-아이템-데이터-계약과-장비-효과)의 선행 테스트(`tests/data/integrity.test.ts`·`tests/battle/damage.test.ts`·`movement.test.ts`)를 먼저 작성해 실패를 확인한 뒤 구현한다. 착수 시 TASK-25의 상태를 `in-progress`로 바꾸고 같은 변경에서 [계획 트리](#계획-트리)를 재생성한다
 - M2 착수 전 조사(기준선 반환 불필요 판단, 규칙 정본, M1이 남긴 연결 지점)는 아래에 그대로 둔다 — 구현 중 규칙 정본을 다시 찾을 때 쓰는 색인이다
 
 ### M2 착수 전 조사 (2026-08-17, wf-implement §3.1·§3.2)

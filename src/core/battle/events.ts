@@ -14,4 +14,6 @@ export type BattleEvent =
   | { type: "healed"; officerId: string; amount: number }
   | { type: "confused"; officerId: string }
   | { type: "expGained"; officerId: string; amount: number }
-  | { type: "leveledUp"; officerId: string; level: number };
+  | { type: "leveledUp"; officerId: string; level: number }
+  | { type: "tacticUsed"; officerId: string; tacticId: string; to: Pos }
+  | { type: "tacticMissed"; officerId: string; targetId: string };

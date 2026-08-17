@@ -4,19 +4,21 @@ import { physicalDamage } from "./damage";
 import type { BattleEvent } from "./events";
 import { attackExp, gainExp, grantDefeatExp } from "./experience";
 import { changeMorale } from "./morale";
-import { reachableTiles } from "./movement";
+import { gridDistance, reachableTiles } from "./movement";
 import { classOf, type BattleContext, type BattleState, type Unit } from "./state";
+import { applyTactic, tacticRejection } from "./tactics";
 
 /**
  * 커맨드 적용([상세 스펙 §1.1, §1.3], DES-01).
  * 모든 행동을 커맨드로 표현해 로그·리플레이·테스트가 같은 경로를 쓴다([전체 설계 §6.3]).
  * 상태 변경은 이 함수 안에서 완결된다 — 저장은 언제나 커맨드 사이에서만 일어나므로
  * `BattleState`는 항상 직렬화 가능한 일관 상태여야 한다([상세 스펙 §2.2], M3).
- * 책략·아이템 커맨드는 M2에서 이 합집합에 붙는다.
+ * 아이템 커맨드는 M2 TASK-26에서 이 합집합에 붙는다.
  */
 export type Command =
   | { type: "move"; officerId: string; to: Pos }
   | { type: "attack"; officerId: string; targetId: string }
+  | { type: "useTactic"; officerId: string; tacticId: string; to: Pos }
   | { type: "wait"; officerId: string };
 
 /**
@@ -24,17 +26,6 @@ export type Command =
  * 조용히 무시하면 플레이어가 "왜 안 되는지" 알 수 없는 화면이 남는다.
  */
 export class BattleCommandError extends Error {}
-
-/**
- * 공격 가능 거리. 방향 수가 거리 척도를 정한다 —
- * 4방향이면 상하좌우 합(마름모), 8방향이면 대각을 한 칸으로 세는 정사각형.
- * 그래야 사거리 1에서 4방향은 인접 4칸, 8방향은 둘러싼 8칸이 된다([상세 스펙 §1.3]).
- */
-function attackDistance([ax, ay]: Pos, [bx, by]: Pos, directions: 4 | 8): number {
-  const dx = Math.abs(ax - bx);
-  const dy = Math.abs(ay - by);
-  return directions === 8 ? Math.max(dx, dy) : dx + dy;
-}
 
 /**
  * 공격측 병과의 사거리 안에 대상이 있는가. 최소 사거리 안쪽(너무 가까움)도 밖으로 본다.
@@ -47,7 +38,7 @@ export function inAttackRange(
   from: Pos = attacker.pos,
 ): boolean {
   const { min, max, directions } = classOf(ctx, attacker).attackRange;
-  const distance = attackDistance(from, target.pos, directions);
+  const distance = gridDistance(from, target.pos, directions);
   return distance >= min && distance <= max;
 }
 
@@ -64,7 +55,7 @@ export function attackableTiles(ctx: BattleContext, unit: Unit, from: Pos = unit
     for (let x = from[0] - max; x <= from[0] + max; x += 1) {
       if (x < 0 || y < 0 || x >= width || y >= height) continue;
 
-      const distance = attackDistance(from, [x, y], directions);
+      const distance = gridDistance(from, [x, y], directions);
       if (distance >= min && distance <= max) tiles.push([x, y]);
     }
   }
@@ -141,6 +132,19 @@ export function applyCommand(
         // 살아남은 부대만 사기를 잃는다 — 전장을 떠난 부대의 사기는 남는 상태가 아니다([상세 스펙 §1.4]).
         events.push(...changeMorale(ctx, target, -ctx.data.combatConfig.moraleLossOnHit));
       }
+      return events;
+    }
+
+    case "useTactic": {
+      const tactic = ctx.data.tactics.find((candidate) => candidate.id === cmd.tacticId);
+      if (!tactic) throw new BattleCommandError(`책략 '${cmd.tacticId}'가 데이터에 없다`);
+
+      // 규칙 판정은 전부 `tactics.ts`가 한다 — 화면도 같은 함수로 메뉴를 걸러낸다(TASK-32).
+      const rejection = tacticRejection(ctx, state, unit, tactic, cmd.to);
+      if (rejection) throw new BattleCommandError(rejection);
+
+      const events = applyTactic(ctx, state, unit, tactic, cmd.to, rng);
+      unit.acted = true;
       return events;
     }
 

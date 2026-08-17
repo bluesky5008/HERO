@@ -106,10 +106,10 @@ const TACTICS = [
     range: 3,
     terrainRequired: ["mountain"],
   },
-  { id: "taunt", name: "도발", category: "moraleDown", cost: 3, range: 3, effect: "moraleDown" },
+  { id: "taunt", name: "도발", category: "moraleDown", cost: 3, baseDamage: 30, range: 3, effect: "moraleDown" },
   { id: "bewilder", name: "교란", category: "moraleDown", cost: 5, range: 3, effect: "confuse" },
   { id: "mend", name: "치료", category: "heal", cost: 4, baseDamage: 300, range: 2, effect: "healHp" },
-  { id: "cheer", name: "격려", category: "heal", cost: 3, range: 2, effect: "healMorale" },
+  { id: "cheer", name: "격려", category: "heal", cost: 3, baseDamage: 20, range: 2, effect: "healMorale" },
 ].map((tactic) => ({
   baseDamage: 0,
   area: "single" as const,

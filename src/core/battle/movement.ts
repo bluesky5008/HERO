@@ -17,6 +17,17 @@ const STEPS: readonly Pos[] = [
 const key = ([x, y]: Pos): string => `${x},${y}`;
 
 /**
+ * 두 칸 사이의 거리. 방향 수가 척도를 정한다 —
+ * 4방향이면 상하좌우 합(마름모), 8방향이면 대각을 한 칸으로 세는 정사각형([상세 스펙 §1.3]).
+ * 공격 사거리와 책략 사거리가 같은 자를 쓰도록 여기 한 곳에 둔다.
+ */
+export function gridDistance([ax, ay]: Pos, [bx, by]: Pos, directions: 4 | 8): number {
+  const dx = Math.abs(ax - bx);
+  const dy = Math.abs(ay - by);
+  return directions === 8 ? Math.max(dx, dy) : dx + dy;
+}
+
+/**
  * 한 칸에 들어가는 데 드는 코스트. `null`이면 진입 불가.
  *
  * 지형표(`terrain.moveCost`)가 계열별 기본값이고 병과의 `movementRules`가 그 위를 덮는다.

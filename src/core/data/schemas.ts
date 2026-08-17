@@ -71,6 +71,20 @@ export const CombatConfigSchema = z.object({
   }),
   /** 책략치 상한식 `floor(지력 / 이 값) + 레벨`([상세 스펙 §1.5]) */
   mpIntDivisor: z.number().int().positive(),
+  /** 책략 판정([상세 스펙 §1.5]) */
+  tactic: z.object({
+    /** 명중률 `clamp(hitBase + 지력차, hitMin, hitMax)` (백분율) */
+    hitBase: z.number().nonnegative(),
+    hitMin: z.number().nonnegative(),
+    hitMax: z.number().nonnegative(),
+    /** 피해 배수 `1 + 지력차 / 이 값` */
+    damageIntDivisor: z.number().positive(),
+    /**
+     * 거점 위 부대에게 무효인 효과([상세 스펙 §1.5]).
+     * 사기저하·혼란까지 막는지는 원작 대조가 필요한 `[검증]` 항목이라 코드가 아니라 이 목록이 정한다.
+     */
+    strongholdBlocks: z.array(z.string().min(1)),
+  }),
   /** 레벨 상한([상세 스펙 §1.6]). 출진 명단의 레벨 상한과 달리 전투 중 성장의 천장이다. */
   maxLevel: z.number().int().positive(),
   /** 경험치([상세 스펙 §1.6]) */
