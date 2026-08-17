@@ -143,7 +143,7 @@
 ## 인계
 
 - 다음 단계 또는 워크플로우: wf-implement 계속 — M1 사이클 TASK-10부터 구현
-- 시작 조건: 충족 — 기준선 v1 승인, M0 완료(원격 `498d4c3`까지 push됨), M1 계획 수립 완료
+- 시작 조건: 충족 — 기준선 v1 승인, M0 완료, M1 계획 수립 완료. TASK-10~14 구현이 원격 `f8668ad`까지 push됨(작업 트리 청결)
 - 입력 문서와 기준선: [REQ-ygj-remake](../../requirements.md) v1, [DESIGN-ygj-remake](../../design.md) v1, [PLAN-ygj-remake](../../plan.md), [결정 등록부](../../decisions.md)
 - 완료된 항목: M1 계획 수립, 계획 트리 생성, TASK-10~14. 검증 VER-06 충족, VER-07 단위 테스트 충족
 - 미완료 항목: TASK-15~20 구현, VER-05·VER-08 검증
