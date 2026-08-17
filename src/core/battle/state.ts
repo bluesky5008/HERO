@@ -23,6 +23,10 @@ export interface Unit {
   moved: boolean;
   /** 이번 페이즈의 행동을 마쳤는가. 행동 후에는 이동도 할 수 없다. */
   acted: boolean;
+  /** 혼란 상태인가. 사기가 임계값 미만일 때 턴 시작 판정으로 걸리고 조작이 막힌다([상세 스펙 §1.4]). */
+  confused: boolean;
+  /** 다음 레벨까지의 누적 경험치. 임계에 닿을 때마다 레벨이 오르고 잔여분이 남는다([상세 스펙 §1.6]). */
+  exp: number;
 }
 
 export interface BattleState {
@@ -142,6 +146,8 @@ export function createBattleState(
         pos: [x, y],
         moved: false,
         acted: false,
+        confused: false,
+        exp: 0,
       });
     }
   }

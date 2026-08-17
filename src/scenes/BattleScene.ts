@@ -1,6 +1,6 @@
 import { Container, Graphics, type Application, type FederatedPointerEvent } from "pixi.js";
 import { classOf, createBattleState, officerOf, type BattleContext } from "../core/battle/state";
-import { endPhase, isPhaseComplete, outcome, type Outcome } from "../core/battle/turn";
+import { beginPhase, endPhase, isPhaseComplete, outcome, type Outcome } from "../core/battle/turn";
 import { runAiPhase } from "../core/battle/ai";
 import type { GameData } from "../core/data/loader";
 import type { Pos, Stage, StageUnit } from "../core/data/schemas";
@@ -124,18 +124,26 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
     render();
   }
 
-  function runEnemyPhase(): void {
+  /** 페이즈를 넘기고 새 차례의 턴 시작 처리까지 끝낸다([상세 스펙 §1.1]) — 둘은 항상 붙어 있어야 한다. */
+  function handOver(): void {
     endPhase(state);
+    beginPhase(ctx, state, rng);
+  }
+
+  function runEnemyPhase(): void {
+    handOver();
     busy = true;
     render();
 
     window.setTimeout(() => {
       runAiPhase(ctx, state, rng);
       result = outcome(ctx, state);
-      if (!result) endPhase(state);
+      if (!result) handOver();
 
       busy = false;
-      render();
+      // `render()`가 아니라 `afterCommand()`다 — 플레이어 부대가 모두 혼란이면 고를 것이 없어
+      // 입력을 기다린 채 화면이 멈춘다. 같은 판정으로 차례를 다시 넘긴다.
+      afterCommand();
     }, ENEMY_PHASE_DELAY_MS);
   }
 
@@ -230,7 +238,9 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
     return false;
   }
 
-  render();
+  // 첫 플레이어 페이즈도 턴 시작 처리를 받는다 — `endPhase`를 거치지 않고 시작하는 유일한 차례다.
+  beginPhase(ctx, state, rng);
+  afterCommand();
   console.info(
     `${stage.name} — 부대 ${state.units.length}개(아군 ${state.units.filter((unit) => unit.side === "player").length})로 전투 시작`,
   );

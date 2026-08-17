@@ -90,12 +90,19 @@ export const validConfig = {
   tileSize: 32,
   logicalWidth: 1280,
   logicalHeight: 720,
+  shareExp: false,
 };
 
 export const validCombatConfig = {
   baseDamage: 300,
   minDamage: 1,
   damageJitter: { min: 0.9, max: 1.1 },
+  moraleMax: 100,
+  moraleLossOnHit: 2,
+  confusion: { threshold: 30, chance: 0.5 },
+  strongholdRecovery: { hpRatio: 0.1, morale: 5 },
+  maxLevel: 99,
+  exp: { divisor: 10, min: 1, max: 40, defeatBonus: 45, perLevel: 100 },
 };
 
 /** 스키마와 참조 무결성을 모두 통과하는 최소 데이터 묶음. */

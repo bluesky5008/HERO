@@ -91,9 +91,12 @@ describe("applyCommand — 공격", () => {
     const dealt = before - b.unit("foot2")!.hp;
 
     expect(dealt).toBeGreaterThan(0);
-    expect(events).toEqual([
-      { type: "attacked", attackerId: "foot", defenderId: "foot2", damage: dealt },
-    ]);
+    expect(events).toContainEqual({
+      type: "attacked",
+      attackerId: "foot",
+      defenderId: "foot2",
+      damage: dealt,
+    });
   });
 
   it("사거리 밖이면 거부하고 아무것도 바꾸지 않는다", () => {
@@ -155,7 +158,8 @@ describe("applyCommand — 공격", () => {
     const events = b.apply({ type: "attack", officerId: "foot", targetId: "foot2" });
 
     expect(b.unit("foot")?.hp).toBe(attackerHp);
-    expect(events).toHaveLength(1);
+    // 맞은 쪽이 공격자가 되는 이벤트가 없어야 한다 — 피격 사기 감소 같은 다른 이벤트는 붙을 수 있다.
+    expect(events.filter((event) => event.type === "attacked")).toHaveLength(1);
   });
 
   it("격파하면 부대를 전장에서 지우고 격파 이벤트를 낸다", () => {
@@ -166,10 +170,17 @@ describe("applyCommand — 공격", () => {
 
     const events = b.apply({ type: "attack", officerId: "foot", targetId: "foot2" });
 
-    expect(events).toEqual([
-      { type: "attacked", attackerId: "foot", defenderId: "foot2", damage: 1 },
-      { type: "defeated", officerId: "foot2" },
-    ]);
+    expect(events).toContainEqual({
+      type: "attacked",
+      attackerId: "foot",
+      defenderId: "foot2",
+      damage: 1,
+    });
+    expect(events).toContainEqual({ type: "defeated", officerId: "foot2" });
+    // 격파는 공격 이벤트 뒤에 온다 — 연출이 "맞고 나서 쓰러진다" 순서로 재생되어야 한다.
+    expect(events.findIndex((event) => event.type === "defeated")).toBeGreaterThan(
+      events.findIndex((event) => event.type === "attacked"),
+    );
     expect(b.unit("foot2")).toBeUndefined();
     expect(b.state.units.map((unit) => unit.officerId)).toEqual(["foot"]);
   });

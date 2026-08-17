@@ -1,11 +1,42 @@
-import type { BattleContext, BattleState } from "./state";
+import type { Rng } from "../rng";
+import type { BattleEvent } from "./events";
+import { changeMorale, rollConfusion } from "./morale";
+import { terrainAt, type BattleContext, type BattleState, type Unit } from "./state";
 
 /**
- * 페이즈 교대와 승패 판정([상세 스펙 §1.1], DES-01 → FR-02).
- * 턴 시작의 거점 회복·상태이상 판정·이벤트 트리거는 해당 기능이 들어오는 M2에서 여기에 붙는다.
+ * 페이즈 교대·턴 시작 처리와 승패 판정([상세 스펙 §1.1], DES-01 → FR-02).
  */
 
 export type Outcome = "victory" | "defeat";
+
+/** 거점 위 부대의 턴 시작 회복([상세 스펙 §1.7] — 턴 시작 ②). 책략치 회복은 M2 TASK-23이 더한다. */
+function recoverOnStronghold(ctx: BattleContext, unit: Unit): BattleEvent[] {
+  if (!terrainAt(ctx, unit.pos)?.stronghold) return [];
+
+  const { hpRatio, morale } = ctx.data.combatConfig.strongholdRecovery;
+  const healed = Math.min(Math.floor(unit.hpMax * hpRatio), unit.hpMax - unit.hp);
+  unit.hp += healed;
+
+  return [
+    ...(healed > 0 ? [{ type: "healed" as const, officerId: unit.officerId, amount: healed }] : []),
+    ...changeMorale(ctx, unit, morale),
+  ];
+}
+
+/**
+ * 차례를 받은 진영의 턴 시작 처리. 순서는 [상세 스펙 §1.1]의
+ * ① 자동 저장 → ② 거점 회복 → ③ 자연 회복 아이템 → ④ 상태이상 판정 → ⑤ 턴 이벤트로 고정한다.
+ * 단계를 나눠 두므로 뒤 작업(①은 M3, ③은 TASK-26, ⑤는 TASK-29)이 자리만 채우면 된다.
+ * `endPhase` 다음과 전투 시작 직후에 부른다 — 이동·행동 기록이 초기화된 뒤여야 혼란이 그 턴을 소비한다.
+ */
+export function beginPhase(ctx: BattleContext, state: BattleState, rng: Rng): BattleEvent[] {
+  const actors = state.units.filter((unit) => unit.side === state.phase);
+
+  return [
+    ...actors.flatMap((unit) => recoverOnStronghold(ctx, unit)),
+    ...actors.flatMap((unit) => rollConfusion(ctx, unit, rng)),
+  ];
+}
 
 /** 현재 페이즈 진영이 더 움직일 수 없으면 참. 부대가 하나도 없는 진영도 참이다(무한 대기 방지). */
 export function isPhaseComplete(state: BattleState): boolean {

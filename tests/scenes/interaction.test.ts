@@ -59,6 +59,15 @@ describe("선택", () => {
     expect(ui.mode).toBe("idle");
   });
 
+  it("혼란에 빠진 부대는 고를 수 없다 ([상세 스펙 §1.4])", () => {
+    const { state, ui } = setup();
+    unitAt(state, "foot").confused = true;
+
+    ui.confirm([1, 1]);
+
+    expect(ui.mode).toBe("idle");
+  });
+
   it("이동 범위는 코어의 계산을 그대로 내준다", () => {
     const { ctx, state, ui } = setup();
 
@@ -153,7 +162,7 @@ describe("공격", () => {
     ui.choose("attack");
     const events = ui.confirm([4, 1]);
 
-    expect(events.map((event) => event.type)).toEqual(["attacked"]);
+    expect(events.map((event) => event.type)).toContain("attacked");
     const horse = unitAt(state, "horse");
     expect(horse.hp).toBeLessThan(horse.hpMax);
     expect(unitAt(state, "foot").acted).toBe(true);

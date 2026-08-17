@@ -77,8 +77,9 @@ export function createInteraction(
 
   const select = (pos: Pos): void => {
     const unit = unitAt(pos);
-    // 남의 차례의 부대와 이미 행동을 마친 부대는 조작 대상이 아니다 — 커맨드 계층이 거부할 선택을 애초에 만들지 않는다.
-    if (!unit || unit.side !== state.phase || unit.acted) return;
+    // 남의 차례의 부대, 이미 행동을 마친 부대, 혼란에 빠진 부대는 조작 대상이 아니다 —
+    // 커맨드 계층이 거부할 선택을 애초에 만들지 않는다([상세 스펙 §1.4]).
+    if (!unit || unit.side !== state.phase || unit.acted || unit.confused) return;
 
     mode = "moving";
     officerId = unit.officerId;

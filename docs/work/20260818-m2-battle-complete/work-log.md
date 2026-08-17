@@ -11,8 +11,8 @@
 ## 요약
 
 - 목적: M2(전투 완성) 사이클의 수행 내용·결정·검증 증거를 남기고, 세션이 끊겨도 다음 세션이 대화 기록 없이 재개할 수 있게 한다.
-- 현재 결론 또는 상태: **계획 수립 완료, 구현 미착수**. 작업 14건(TASK-21~34)과 검증 7건(VER-09~15)을 [PLAN](../../plan.md#m2-사이클-진행-중)에 정의하고 계획 트리를 재생성했다. 코드·데이터 변경은 아직 없다.
-- 다음 행동: [TASK-21](../../plan.md#task-21-사기혼란과-턴-시작-처리)의 선행 테스트를 작성해 실패를 확인한 뒤 구현한다.
+- 현재 결론 또는 상태: **구현 진행 중 (2/14)**. 작업 14건(TASK-21~34)과 검증 7건(VER-09~15)을 [PLAN](../../plan.md#m2-사이클-진행-중)에 정의했고, [TASK-21](../../plan.md#task-21-사기혼란과-턴-시작-처리)(사기·혼란과 턴 시작 처리)과 [TASK-22](../../plan.md#task-22-경험치레벨업)(경험치·레벨업, 적 부대 성장 없음 확정 포함)를 완료했다. 자동 게이트 4종이 모두 성공한다(테스트 240건 — M1 기준선 184건 + 신규 56건).
+- 다음 행동: [TASK-23 책략 데이터 계약과 책략치(MP)](../../plan.md#task-23-책략-데이터-계약과-책략치mp)의 선행 테스트를 작성해 실패를 확인한 뒤 구현한다.
 
 ## 문서 연결
 
@@ -32,8 +32,8 @@
 
 ## 현재 상태
 
-- 진행 중인 작업: 없음 (계획 수립만 완료)
-- 마지막 완료 작업: M2 계획 수립 (2026-08-18)
+- 진행 중인 작업: 없음
+- 마지막 완료 작업: [TASK-22 경험치·레벨업](../../plan.md#task-22-경험치레벨업) (2026-08-18)
 - 차단 요인: 없음
 
 ## 수행 기록
@@ -57,17 +57,101 @@
 - 실행한 검증: 없음(계획 수립 단계). 상태 재확인으로 `git status`·`git log`와 `src/`·`data/`·`tests/` 파일 목록을 확인했다.
 - 결과: [PLAN](../../plan.md)에 M2 사이클 절, 검증 계획 VER-09~15, 위험 RISK-M2-01~04이 추가되고 계획 트리가 M2 14개 노드를 포함하도록 재생성되었다. 구현은 아직 시작하지 않았다.
 
+### 2026-08-18 — TASK-21 사기·혼란과 턴 시작 처리
+
+- 수행 내용: [TASK-21](../../plan.md#task-21-사기혼란과-턴-시작-처리)을 [wf-implement §3.3의 TDD 사이클](#수행-기록)로 구현했다. 선행 테스트(`tests/battle/morale.test.ts` 신규 24건, `tests/battle/turn.test.ts` 2건)를 먼저 작성해 `beginPhase is not a function`·`morale.ts` 모듈 없음으로 실패(Red)를 확인한 뒤 최소 구현으로 통과시켰다(Green). 사기 변화·혼란 판정·거점 턴 시작 회복·피격 사기 감소·혼란 부대 조작 차단을 코어에 넣고, 턴 시작 처리를 `beginPhase` 파이프라인 하나로 모아 전투 화면에 배선했다.
+- 변경 파일:
+  - 신규 — `src/core/battle/morale.ts`(`changeMorale`·`rollConfusion`), `tests/battle/morale.test.ts`
+  - 코어 — `src/core/battle/turn.ts`(`beginPhase`·거점 회복), `state.ts`(`Unit.confused`), `commands.ts`(혼란 조작 거부·피격 사기 감소), `events.ts`(`moraleChanged`·`healed`·`confused`)
+  - 데이터 계약 — `src/core/data/schemas.ts`(`CombatConfig` 상수 6종), `data/config/combat-config.json`
+  - 화면 — `src/scenes/BattleScene.ts`(`beginPhase` 배선), `BattleInteraction.ts`(혼란 부대 선택 차단)
+  - 테스트 — `tests/battle/{fixtures,turn,commands}.test.ts`, `tests/data/{fixtures,schemas.test}.ts`, `tests/scenes/interaction.test.ts`
+- 발견 사항:
+  - **새 PC(맥미니, macOS)로 이관해 재개했다.** 이전 세션은 Windows 11이었다. `git clone` 후 HEAD가 `3793985`로 일치했고, `npm ci` 후 기준선(테스트 184건·`npm run validate`·`npm run build`)이 모두 통과해 기준선과 코드가 여전히 정합함을 확인했다(wf-implement §3.1). 실행 환경은 Node.js v26.7.0 / npm 11.19.0이다. `reference/`(원작 대조용 개인 자료)는 `.gitignore` 대상이라 이 PC에 없다 — M2 후반의 원작 대조([TASK-33](../../plan.md#task-33-m2-검증-스테이지와-원작-대조-튜닝))에서 필요해지면 별도로 옮겨야 한다.
+  - **혼란이 페이즈 종료를 막을 수 있었다.** 혼란 부대는 조작이 불가한데 `isPhaseComplete`는 `acted`만 본다. 아무 처리도 하지 않으면 플레이어 전원이 혼란일 때 입력을 기다린 채 화면이 멈춘다. `rollConfusion`이 혼란 시 `moved`·`acted`를 함께 세우고(제자리 대기 = [상세 스펙 §1.4]의 기본 `confusionBehavior`), `BattleScene`이 적 페이즈 뒤 `render()` 대신 `afterCommand()`를 불러 그 판정을 다시 거치게 했다.
+  - **M1 테스트 3건이 공격 이벤트 목록을 정확히 일치로 단언하고 있었다.** 피격 사기 감소가 `moraleChanged`를 더하면서 깨졌는데, 동작 회귀가 아니라 [FR-05](../../requirements.md#기능-요구사항)가 규정한 규칙 확장이다. 각 테스트의 의도(데미지가 이벤트에 실린다 / 반격이 없다 / 공격이 일어나고 선택이 풀린다)를 유지하면서 새 이벤트를 금지하지 않도록 단언을 고쳤다 — "반격 없음"은 `attacked` 이벤트가 1건임을 세는 방식으로 바꿔 의도가 더 정확해졌다.
+- 결정과 이유:
+  - **`src/core/battle/morale.ts`를 새로 만들었다.** [계획의 변경 대상](../../plan.md#task-21-사기혼란과-턴-시작-처리)에는 없던 파일이다. 사기·혼란 규칙을 `state.ts`(상태 구성)나 `turn.ts`(페이즈)에 섞는 대신 `damage.ts`·`movement.ts`와 같은 "규칙 영역 하나 = 파일 하나" 구조를 따랐다. 계획의 변경 대상은 주요 파일 안내이고 이 결정은 승인 범위 안의 내부 구현 세부사항이므로(wf-implement §4.1) 계획으로 되돌리지 않았다.
+  - **사기를 바꾸는 모든 경로가 `changeMorale`을 지나게 했다.** "사기가 임계값 이상으로 회복되면 혼란이 즉시 해제된다"([상세 스펙 §1.4])는 규칙이 한 곳에만 있게 하려는 것이다. 기각한 대안은 해제를 턴 시작 판정에서만 처리하는 것 — 그러면 책략·아이템([TASK-24](../../plan.md#task-24-책략-실행-커맨드)·[TASK-26](../../plan.md#task-26-아이템-사용과-승급계열-전환))으로 사기를 올려도 다음 턴까지 혼란이 남아 규칙과 어긋난다.
+  - **`endPhase`의 시그니처를 바꾸지 않고 `beginPhase`를 따로 두었다.** `endPhase`가 턴 시작 처리까지 하게 하면 `ctx`·`rng`를 받아야 해 M1이 확정한 계약과 기존 테스트가 함께 움직인다. 전투 시작 직후의 첫 플레이어 페이즈는 `endPhase`를 거치지 않으므로 어느 쪽이든 호출 지점이 하나 남는다. 대신 화면 쪽에 `handOver()`를 두어 "페이즈 교대와 턴 시작 처리는 항상 붙어 있다"를 한 자리에 고정했다.
+  - **턴 시작 처리를 단계별 전체 순회로 짰다.** 부대마다 ②→④를 도는 대신 모든 부대의 ②를 끝내고 ④로 넘어간다. [상세 스펙 §1.1]의 ①~⑤가 전역 순서이고, 뒤 작업이 채울 ③(자연 회복 아이템)·⑤(턴 이벤트)가 부대 단위가 아니기 때문이다.
+  - **`confusion.chance` 초기값 0.5는 미확정이다.** [상세 스펙 §1.4]는 "확률 판정"이라고만 적고 값을 주지 않는다([검증] 항목). [TASK-33](../../plan.md#task-33-m2-검증-스테이지와-원작-대조-튜닝)의 원작 대조 대상이며([RISK-M2-01](../../plan.md#위험)), 값을 지어내지 않았음을 여기 남긴다.
+  - **혼란 부대의 UI 선택도 막았다.** `BattleInteraction`의 선택 규칙은 "커맨드 계층이 거부할 선택을 애초에 만들지 않는다"였고, `applyCommand`가 혼란을 거부하게 되었으므로 그 불변식을 지키려면 선택 규칙도 같이 넓혀야 한다. 지금은 혼란 시 `acted`가 서므로 결과가 겹치지만, 이벤트 액션이 혼란을 거는 [TASK-29](../../plan.md#task-29-전투-이벤트-dsl-인터프리터) 이후에는 겹치지 않는다.
+- 실행한 검증:
+
+  | 검증 | 명령 | 결과 | 증거 |
+  |---|---|---|---|
+  | 선행 테스트 실패 확인 (Red) | `npx vitest run tests/battle/morale.test.ts tests/battle/turn.test.ts` | 의도한 실패 | `TypeError: beginPhase is not a function`, `morale.ts` 모듈 미존재로 수집 실패 |
+  | 선행 테스트 통과 (Green) | 같은 명령 | 성공 | 38건 통과(morale 24 + turn 14) |
+  | 결정론 (NFR-01) | `npm test` | 성공 | `같은 시드는 같은 판정을 낸다` — 시드 1의 앞 세 난수(0.092/0.506/0.888)에서 확률 0.5가 `[true, false, false]`로 갈리고 재실행이 같은 값을 낸다 |
+  | 전체 테스트 | `npm test` | 성공 | 11파일 215건 통과 (M1 기준선 184건 + 신규 31건) |
+  | 타입 검사 | `npx tsc --noEmit` | 성공 | 출력 없음 |
+  | 데이터 검증 | `npm run validate` | 성공 | `데이터 검증 통과 (data/) — 병과 6, 무장 6, 지형 9, 스테이지 1` |
+  | 빌드 | `npm run build` | 성공 | `✓ built in 1.00s` |
+  | 로직·렌더 분리 (NFR-02) | `grep -rn 'from "pixi.js"\|from "node:" src/core/` | 성공 | 일치 없음 |
+  | 상수 외부화 (NFR-06) | `src/core/battle/{morale,turn}.ts` 숫자 리터럴 정적 확인 | 성공 | 튜닝 대상 값은 전부 `combatConfig`에서 읽는다. 남은 리터럴은 사기 하한 `0`, 확률 정규화 `rng.range(0, 1)`, 회복량 판정 `healed > 0`뿐이며 셋 다 튜닝 값이 아니라 정의역이다 |
+
+- 결과: 사기·혼란·거점 회복·턴 시작 파이프라인이 코어에 들어가고 화면에 배선되었다. `combat-config.json`에 상수 6종(`moraleMax`·`moraleLossOnHit`·`confusion.threshold`·`confusion.chance`·`strongholdRecovery.hpRatio`·`strongholdRecovery.morale`)이 추가되어 [TASK-21의 완료 조건](../../plan.md#task-21-사기혼란과-턴-시작-처리)("새 상수 5종 이상")을 충족한다. 화면 확인(혼란·거점 회복 연출과 상태이상 표시)은 [TASK-32](../../plan.md#task-32-전투-ui-확장)가 표시 요소를 만든 뒤 [VER-09](../../plan.md#검증-계획)에서 한다.
+
+### 2026-08-18 — TASK-22 경험치·레벨업
+
+- 수행 내용: [TASK-22](../../plan.md#task-22-경험치레벨업)를 TDD 사이클로 구현했다. 선행 테스트 `tests/battle/experience.test.ts`(신규 16건)를 먼저 작성해 `experience.ts` 모듈 미존재로 실패(Red)를 확인한 뒤 구현했다. 공격 경험치·격파 보너스·누적 레벨업(파생치 재계산 포함)·경험치 공유 토글을 넣고 `applyCommand`의 공격 경로에 배선했다.
+- 변경 파일:
+  - 신규 — `src/core/battle/experience.ts`(`attackExp`·`gainExp`·`grantDefeatExp`), `tests/battle/experience.test.ts`
+  - 코어 — `state.ts`(`Unit.exp`), `commands.ts`(공격·격파 경험치 지급), `events.ts`(`expGained`·`leveledUp`)
+  - 데이터 계약 — `schemas.ts`(`CombatConfig.maxLevel`·`exp` 5종, `GameConfig.shareExp`), `data/config/{combat,game}-config.json`
+  - 테스트 — `tests/battle/{fixtures,commands}.test.ts`, `tests/data/{fixtures,schemas.test}.ts`
+- 발견 사항:
+  - **M1 테스트 1건이 또 정확히 일치 단언으로 깨졌다.** `격파하면 부대를 전장에서 지우고 격파 이벤트를 낸다`가 새 `expGained`로 실패했다. TASK-21과 같은 성질(규칙 확장이지 회귀가 아님)이며, 포함 단언으로 바꾸면서 "격파 이벤트는 공격 이벤트 뒤에 온다"는 연출 순서를 새로 명시했다 — 기존 배열 단언이 암묵적으로 지키던 성질이라 잃지 않게 옮겼다.
+  - **적 부대도 경험치를 얻고 레벨이 오른다.** 현재 구현은 진영을 가리지 않는다([미완료 항목](#미완료-항목)의 미확정 규칙 참조).
+- 결정과 이유:
+  - **`shareExp`는 격파 보너스에만 적용한다.** [상세 스펙 §1.6](../../../yeonggeoljeon-remake-spec-detail.md)의 해당 문장이 "적 격파 경험치는 막타 부대가 독식(원작 재현). 낮은 레벨 부대 육성 편의 옵션(경험치 공유)은 …토글로 제공"으로, 토글이 "막타 독식"의 반대 개념으로 제시된다. 기각한 대안은 공격 경험치까지 전부 나누는 것 — 그러면 토글을 켠 순간 주력 부대의 성장이 인원수만큼 느려져 "육성 편의"라는 목적과 어긋난다. 기본값은 [FR-06](../../requirements.md#기능-요구사항)이 규정한 대로 OFF(원작 동작)다.
+  - **공격 경험치는 내림으로 정수화한다.** [상세 스펙 §1.6]의 `clamp(dmg/expDivisor, 1, 40)`은 정수화 방식을 정하지 않는다. 내림을 골라 "낸 데미지보다 많이 받는" 경우를 없앴고, 하한이 1이라 적은 데미지도 0이 되지 않는다.
+  - **최대 레벨에서 경험치를 임계 직전으로 묶었다.** 올릴 레벨이 없는데 누적만 계속하면 [TASK-32](../../plan.md#task-32-전투-ui-확장)의 경험치 표시가 영구히 가득 찬 상태가 된다. 규칙이 정한 것은 "레벨 99에서 더 오르지 않는다"뿐이므로 그 안에서 상태를 온전하게 유지하는 선택이다.
+  - **`maxLevel`을 `combat-config.json`에 두었다.** `RosterEntrySchema`의 `level` 상한 99와 값이 같지만 의미가 다르다 — 스키마 쪽은 데이터 입력 시점의 출진 레벨 한계이고, `maxLevel`은 전투 중 성장의 천장이다. `moraleMax`와 `RosterEntry.morale` 상한의 관계도 같다.
+- 실행한 검증:
+
+  | 검증 | 명령 | 결과 | 증거 |
+  |---|---|---|---|
+  | 선행 테스트 실패 확인 (Red) | `npx vitest run tests/battle/experience.test.ts` | 의도한 실패 | `Failed to load url ../../src/core/battle/experience` |
+  | 선행 테스트 통과 (Green) | 같은 명령 | 성공 | 16건 통과 |
+  | 전체 테스트 | `npm test` | 성공 | 12파일 236건 통과 (TASK-21 시점 215건 + 신규 21건) |
+  | 타입 검사 | `npx tsc --noEmit` | 성공 | 출력 없음 |
+  | 데이터 검증 | `npm run validate` | 성공 | `데이터 검증 통과 (data/) — 병과 6, 무장 6, 지형 9, 스테이지 1` |
+  | 빌드 | `npm run build` | 성공 | `✓ built in 1.05s` |
+  | 상수 외부화 (NFR-06) | `src/core/battle/experience.ts` 숫자 리터럴 정적 확인 | 성공 | 남은 리터럴은 지급액 가드 `amount <= 0`, 레벨 증분 `+= 1`, config 파생 `perLevel - 1`뿐이며 튜닝 값이 아니다 |
+
+- 결과: 경험치·레벨업이 코어에 들어가고 공격 경로에 배선되었다. `combat-config.json`에 상수 6종(`maxLevel`·`exp.divisor`·`exp.min`·`exp.max`·`exp.defeatBonus`·`exp.perLevel`), `game-config.json`에 `shareExp`가 추가되었다. 레벨업의 병력 상한 재계산은 [M1이 확정한 `hpMaxOf`](../20260817-m1-battle-prototype/work-log.md#재개-지점)만을 경로로 쓰므로 배치 시점 값과 갈라지지 않는다([TASK-22의 위험](../../plan.md#task-22-경험치레벨업) 완화).
+
+### 2026-08-18 — TASK-22 후속: 적 부대 경험치 규칙 확정
+
+- 수행 내용: TASK-22가 미확정으로 남겼던 "적 부대도 경험치를 얻는가"에 대해 사용자가 **적 부대는 경험치를 얻어 레벨이 오르면 안 된다**고 결정했다. 재현 테스트 4건을 먼저 작성해 실패(Red)를 확인한 뒤 `gainExp`에 진영 조건을 넣었다.
+- 변경 파일: `src/core/battle/experience.ts`, `tests/battle/experience.test.ts`
+- 결정과 이유:
+  - **규칙을 `gainExp` 한 곳에 두었다.** 경험치를 주는 모든 경로가 이 함수를 지나므로 뒤 작업의 책략([TASK-24](../../plan.md#task-24-책략-실행-커맨드))·아이템([TASK-26](../../plan.md#task-26-아이템-사용과-승급계열-전환))·일기토([TASK-30](../../plan.md#task-30-일기토)) 경험치도 자동으로 같은 규칙을 따른다. 기각한 대안은 `commands.ts`의 호출부마다 조건을 두는 것 — 그러면 새 경험치 경로가 생길 때마다 규칙을 다시 적어야 하고, 한 곳을 빠뜨리면 조용히 어긋난다(공유 함수의 문제는 호출부가 아니라 그 함수에서 고친다).
+  - **`grantDefeatExp`의 경험치 공유는 따로 손대지 않았다.** 분배가 결국 `gainExp`를 부르므로 적 진영에서는 자연히 0이 된다. 조건을 두 곳에 적지 않는다.
+- 실행한 검증:
+
+  | 검증 | 명령 | 결과 | 증거 |
+  |---|---|---|---|
+  | 재현 테스트 실패 확인 (Red) | `npx vitest run tests/battle/experience.test.ts` | 의도한 실패 | 4건 실패 — 적 부대가 경험치·레벨·병력 상한을 얻고, 적 격파 시 `expGained`가 났으며, 공유가 적 진영에도 분배되었다 |
+  | 통과 (Green) | 같은 명령 | 성공 | 20건 통과 |
+  | 전체 테스트 | `npm test` | 성공 | 12파일 240건 통과 |
+  | 타입 검사·데이터 검증·빌드 | `npx tsc --noEmit` / `npm run validate` / `npm run build` | 성공 | 출력 없음 / `데이터 검증 통과` / `✓ built in 1.01s` |
+
+- 결과: 성장은 아군 부대만의 것이 되었다. [미완료 항목](#미완료-항목)의 미확정 규칙 하나가 해소되어 TASK-33의 원작 대조 항목에서 빠진다.
+
 ## 검증 범위와 환경
 
-- 대상 기준선 또는 구현: [REQ-ygj-remake](../../requirements.md) v1 / [DESIGN-ygj-remake](../../design.md) v1의 M2 범위. 구현 미착수.
-- 실행 환경: Windows 11, Node.js v24.19.0 / npm 11.17.0(사용자 영역 설치). 화면 확인은 `npm run dev` + Chrome 헤드리스 CDP 하네스([M1 재개 지점](../20260817-m1-battle-prototype/work-log.md#재개-지점) 7번).
-- 제외 항목: 없음(계획 단계이므로 아직 실행한 검증이 없다).
+- 대상 기준선 또는 구현: [REQ-ygj-remake](../../requirements.md) v1 / [DESIGN-ygj-remake](../../design.md) v1의 M2 범위. TASK-21·22 완료, TASK-23~34 미착수.
+- 실행 환경: **macOS(Darwin 25.4.0, 맥미니), Node.js v26.7.0 / npm 11.19.0**(2026-08-18 이관). 계획 수립까지는 Windows 11 / Node.js v24.19.0 / npm 11.17.0이었다. 화면 확인은 `npm run dev` + Chrome 헤드리스 CDP 하네스([M1 재개 지점](../20260817-m1-battle-prototype/work-log.md#재개-지점) 7번).
+- 제외 항목: 화면 확인(연출·상태이상 표시)은 표시 요소를 만드는 [TASK-32](../../plan.md#task-32-전투-ui-확장) 이후 [VER-09](../../plan.md#검증-계획)에서 한다. TASK-21은 판정 가능한 규칙을 전부 단위 테스트로 고정했다([RISK-M0-01](../../plan.md#위험)의 완화 방식과 같다).
 
 ## 결과 요약
 
-- 성공: 없음 — 아직 검증을 실행하지 않았다.
+- 성공: TASK-21·22의 선행 테스트(각 26건·20건, Red→Green)와 자동 게이트 4종 — `npm test` 240건, `npx tsc --noEmit`, `npm run validate`, `npm run build`. M1 기준선 184건이 한 건도 깨지지 않았다(단언 4건은 규칙 확장에 맞춰 의도를 유지한 채 고쳤다 — 각 [TASK-21](#2026-08-18--task-21-사기혼란과-턴-시작-처리)·[TASK-22](#2026-08-18--task-22-경험치레벨업) 수행 기록).
 - 실패: 없음
-- 미수행: VER-09~15 전부. 대상 작업(TASK-21~34)이 미착수이기 때문이다.
+- 미수행: VER-09~15 전부. TASK-21·22에는 배정된 검증 ID가 없고, 각 VER의 대상 작업(TASK-23~33)이 아직 미착수이기 때문이다.
 
 ## 인수 조건별 결과
 
@@ -87,7 +171,10 @@
 
 ## 비기능 검증
 
-- 아직 없음. NFR-01(결정론)은 VER-12, NFR-04(AI 성능)는 VER-11, NFR-06(튜닝 가능성)은 VER-14, NFR-02(로직·렌더 분리)는 [TASK-34](../../plan.md#task-34-자체-리뷰전체-검증통합)의 정적 확인이 맡는다.
+- **NFR-01(결정론)**: TASK-21의 혼란 판정을 고정 시드 재현 테스트로 고정했다(`같은 시드는 같은 판정을 낸다`). 사이클 단위 검증인 [VER-12](../../plan.md#검증-계획)는 책략·날씨·일기토·AI가 들어온 뒤 TASK-24·28·30·31에서 완결한다.
+- **NFR-02(로직·렌더 분리)**: `src/core/`가 PixiJS·`node:` 모듈을 import하지 않음을 정적 확인했다(TASK-21 시점). 사이클 단위 재확인은 [TASK-34](../../plan.md#task-34-자체-리뷰전체-검증통합)가 맡는다.
+- **NFR-06(튜닝 가능성)**: TASK-21이 더한 상수 6종이 전부 `combat-config.json`에 있고 코어에 튜닝 대상 리터럴이 없음을 확인했다. 사이클 단위 검증은 VER-14(TASK-33)다.
+- **NFR-04(AI 성능)**: 아직 없음 — VER-11(TASK-31)이 맡는다.
 
 ## 남은 위험
 
@@ -101,30 +188,39 @@
 
 ## 설계와 달라진 점
 
-- 아직 없음(구현 미착수). 계획 수립 단계의 판단은 전부 승인된 기준선 안이며, 위 [결정과 이유](#2026-08-18--m2-계획-수립)에 근거를 남겼다.
+- **승인된 설계·요구사항과 달라진 점은 없다.** TASK-21의 구현은 [DES-01](../../design.md#컴포넌트와-책임)이 전투 코어에 배정한 사기·혼란을 [상세 스펙 §1.1·§1.4·§1.7](../../../yeonggeoljeon-remake-spec-detail.md) 그대로 실현했다.
+- **계획의 변경 대상과 달라진 점 하나**: 계획에 없던 `src/core/battle/morale.ts`를 새로 만들었다. 승인 범위 안의 내부 구현 세부사항이며(wf-implement §4.1) 이유는 [TASK-21 수행 기록](#2026-08-18--task-21-사기혼란과-턴-시작-처리)의 결정과 이유에 있다. TASK-22는 계획의 변경 대상 그대로 손댔다.
 
 ## 미완료 항목
 
-- TASK-21~34 전부(0/14), VER-09~15 전부(0/7).
+- TASK-23~34(12건), VER-09~15 전부(0/7).
+- **미확정 상수**(전부 [상세 스펙](../../../yeonggeoljeon-remake-spec-detail.md)의 `[검증]` 항목이라 값을 지어내지 않고 [TASK-33](../../plan.md#task-33-m2-검증-스테이지와-원작-대조-튜닝)의 원작 대조 대상으로 남긴다 — [RISK-M2-01](../../plan.md#위험)):
+  - `confusion.chance` 0.5 — §1.4가 "확률 판정"이라고만 적고 값을 주지 않는다.
+  - `exp.divisor` 10 — §1.6이 `expDivisor`를 `[검증]`으로 남겼다.
+  - `exp.defeatBonus` 45 — §1.6이 준 "40~50" 범위 안의 값이며 실측 확정은 아니다.
+- ~~미확정 규칙 — 적 부대의 경험치·레벨업~~ → **확정됨**(2026-08-18, 사용자 결정). [적 부대의 경험치 규칙](#2026-08-18--task-22-후속-적-부대-경험치-규칙-확정) 참조.
+- **TASK-21·22가 뒤 작업에 남긴 자리**: `beginPhase`의 ③ 자연 회복 아이템([TASK-26](../../plan.md#task-26-아이템-사용과-승급계열-전환))·⑤ 턴 이벤트([TASK-29](../../plan.md#task-29-전투-이벤트-dsl-인터프리터)), 거점 회복과 레벨업의 책략치 항([TASK-23](../../plan.md#task-23-책략-데이터-계약과-책략치mp)), 책략·회복·아이템·일기토의 경험치 지급(TASK-24·26·30 — 각자 `gainExp`를 부른다), 혼란·경험치의 화면 표시([TASK-32](../../plan.md#task-32-전투-ui-확장)).
 
 ## 재개 지점
 
-- 다음 작업: [TASK-21 사기·혼란과 턴 시작 처리](../../plan.md#task-21-사기혼란과-턴-시작-처리)
+- 다음 작업: [TASK-23 책략 데이터 계약과 책략치(MP)](../../plan.md#task-23-책략-데이터-계약과-책략치mp)
 - 먼저 확인할 사항:
-  1. 착수 시 TASK-21의 상태를 `in-progress`로 바꾸고 같은 변경에서 [계획 트리](../../plan.md#계획-트리)를 재생성한다.
-  2. 턴 시작 처리 순서는 [상세 스펙 §1.1](../../../yeonggeoljeon-remake-spec-detail.md)의 ① 자동 저장(M3) → ② 거점 회복 → ③ 자연 회복 아이템 → ④ 상태이상 판정 → ⑤ 턴 이벤트 그대로 고정한다. TASK-23·26·28·29가 이 파이프라인의 빈자리를 차례로 채운다.
-  3. M1이 확정한 계약은 [M1 재개 지점](../20260817-m1-battle-prototype/work-log.md#재개-지점)에 정리되어 있다 — 코어 API 시그니처 `(ctx: BattleContext, state, ...)`, `BattleState`는 세이브 가능한 값만, 전투 테스트는 `tests/battle/fixtures.ts`의 `makeBattle`, 병력 상한식, 상성 방향, 사거리 척도.
-  4. **문서 편집에 PowerShell `Get-Content`/`Set-Content`를 쓰지 않는다** — PowerShell 5.1이 UTF-8 문서를 ANSI로 읽어 한글이 깨진다. Read/Edit/Write 도구만 쓴다.
-- 필요한 명령 또는 파일: PowerShell에서 `$env:Path += ";$env:LOCALAPPDATA\Programs\nodejs"` 후 `npm test` / `npm run validate` / `npm run dev` / `npm run build`. 사용자가 새로 여는 터미널에는 사용자 PATH가 이미 적용되어 있다.
+  1. 착수 시 TASK-23의 상태를 `in-progress`로 바꾸고 같은 변경에서 [계획 트리](../../plan.md#계획-트리)를 재생성한다.
+  2. 턴 시작 처리 순서는 [상세 스펙 §1.1](../../../yeonggeoljeon-remake-spec-detail.md)의 ① 자동 저장(M3) → ② 거점 회복 → ③ 자연 회복 아이템 → ④ 상태이상 판정 → ⑤ 턴 이벤트로 이미 고정되어 있다(`src/core/battle/turn.ts`의 `beginPhase`). TASK-23은 ②의 `recoverOnStronghold`에 책략치 회복을 얹고, `gainExp`의 레벨업 분기에 책략치 상한 재계산을 더한다(두 자리 모두 주석으로 표시해 두었다).
+  3. **TASK-21·22가 확정한 계약** — 사기를 바꾸는 모든 경로는 `changeMorale(ctx, unit, delta)`을, 경험치를 주는 모든 경로는 `gainExp(ctx, unit, amount)`을 지난다(혼란 해제와 레벨업이 각각 그 안에 있다). 혼란 부대는 `moved`·`acted`가 함께 서서 그 턴을 소비한다. 새 전투 상수는 `CombatConfigSchema`에 넣고 `data/config/combat-config.json`·`tests/data/fixtures.ts`의 `validCombatConfig` 두 곳을 함께 갱신한다(게임 설정은 `game-config.json`·`validConfig`).
+  4. **M1 테스트의 정확히 일치 단언에 주의한다.** `tests/battle/commands.test.ts`에서 공격 이벤트 배열을 `toEqual`로 단언하던 3건이 TASK-21·22의 새 이벤트로 깨졌다. 커맨드에 이벤트를 더하는 작업(TASK-24·26·27)에서 같은 일이 또 생기면, 회귀가 아니라 규칙 확장인지 먼저 판단하고 원래 테스트의 의도를 유지한 채 포함 단언으로 바꾼다.
+  5. M1이 확정한 계약은 [M1 재개 지점](../20260817-m1-battle-prototype/work-log.md#재개-지점)에 정리되어 있다 — 코어 API 시그니처 `(ctx: BattleContext, state, ...)`, `BattleState`는 세이브 가능한 값만, 전투 테스트는 `tests/battle/fixtures.ts`의 `makeBattle`, 병력 상한식 `hpMaxOf(officer, level)`, 상성 방향, 사거리 척도.
+  6. 데이터 파일을 새로 더하는 작업(TASK-23·25)은 로더·validate CLI·브라우저 로드 3경로(`src/core/data/loader.ts`·`scripts/readGameData.ts`·`src/browserData.ts`)를 모두 고쳐야 한다.
+- 필요한 명령 또는 파일: `npm test` / `npm run validate` / `npm run dev` / `npm run build`. **현재 개발 PC는 맥미니(macOS)이며 Node.js v26.7.0이 PATH에 있다** — 이전 Windows PC의 `$env:Path += ";$env:LOCALAPPDATA\Programs\nodejs"` 절차는 이 환경에서 필요 없다. `node_modules/`는 커밋되지 않으므로 새 체크아웃에서는 `npm ci`를 먼저 실행한다.
 
 ## 인계
 
-- 다음 단계 또는 워크플로우: wf-implement §3.3(구현) — TASK-21부터 계획 순서대로 TDD 사이클로 진행한다.
-- 시작 조건: 충족 — 기준선 v1 승인, M0·M1 완료, 작업 트리 깨끗함, 자동 게이트 4종 통과 상태.
+- 다음 단계 또는 워크플로우: wf-implement §3.3(구현) — TASK-23부터 계획 순서대로 TDD 사이클로 진행한다.
+- 시작 조건: 충족 — 기준선 v1 승인, M0·M1 완료, TASK-21·22 완료, 자동 게이트 4종 통과 상태.
 - 입력 문서와 기준선: [PLAN-ygj-remake](../../plan.md), [REQ-ygj-remake](../../requirements.md) v1, [DESIGN-ygj-remake](../../design.md) v1, [상세 스펙](../../../yeonggeoljeon-remake-spec-detail.md), [결정 등록부](../../decisions.md)
-- 완료된 항목: M2 계획 수립(TASK-21~34, VER-09~15, 계획 트리 재생성)
-- 미완료 항목: M2 구현 전부
+- 완료된 항목: M2 계획 수립(TASK-21~34, VER-09~15, 계획 트리 재생성), **TASK-21 사기·혼란과 턴 시작 처리**, **TASK-22 경험치·레벨업**
+- 미완료 항목: TASK-23~34, VER-09~15
 - 차단 요인: 없음
-- 다음 행동: TASK-21의 선행 테스트 `tests/battle/morale.test.ts`를 작성해 의도한 이유로 실패하는지 확인한 뒤 최소 구현으로 통과시킨다.
-- 미커밋 변경: 없음 — 사용자 요청으로 계획 수립 결과(`docs/plan.md`, 본 기록)를 커밋해 `origin/main`에 push했다(2026-08-18). 다른 PC에서 체크아웃해 이어받는 것이 전제다.
-- 재개 프롬프트: 작업 20260818-m2-battle-complete의 계획 수립이 끝났다. docs/plan.md의 M2 사이클과 이 기록의 재개 지점을 읽고 TASK-21부터 구현하라.
+- 다음 행동: TASK-23의 선행 테스트(`tests/data/{schemas,integrity}.test.ts`의 `tactics.json` 케이스와 `tests/battle/state.test.ts`의 `mpMax` 파생)를 작성해 의도한 이유로 실패하는지 확인한 뒤 최소 구현으로 통과시킨다.
+- 미커밋 변경: **있음** — TASK-21·22의 코드·데이터·테스트·문서 변경이 로컬 작업 사본에만 있다(신규 `src/core/battle/{morale,experience}.ts`·`tests/battle/{morale,experience}.test.ts` 포함, 총 21파일). 커밋·push는 사용자 요청이 있을 때 수행한다(wf-implement §2.3).
+- 재개 프롬프트: 작업 20260818-m2-battle-complete의 TASK-22까지 끝났다. docs/plan.md의 M2 사이클과 이 기록의 재개 지점을 읽고 TASK-23부터 구현하라.

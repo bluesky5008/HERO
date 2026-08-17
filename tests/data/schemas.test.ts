@@ -3,6 +3,7 @@ import {
   AnimationSetSchema,
   ClassSchema,
   CombatConfigSchema,
+  GameConfigSchema,
   OfficerSchema,
   StageSchema,
   TerrainSchema,
@@ -11,10 +12,23 @@ import {
   validAnimationSet,
   validClass,
   validCombatConfig,
+  validConfig,
   validOfficer,
   validStage,
   validTerrain,
 } from "./fixtures";
+
+describe("GameConfigSchema", () => {
+  it("유효한 게임 설정을 통과시킨다", () => {
+    expect(GameConfigSchema.safeParse(validConfig).success).toBe(true);
+  });
+
+  it("경험치 공유를 적지 않으면 원작 동작인 OFF가 된다 ([상세 스펙 §1.6])", () => {
+    const { shareExp: _omitted, ...withoutShareExp } = validConfig;
+
+    expect(GameConfigSchema.parse(withoutShareExp).shareExp).toBe(false);
+  });
+});
 
 describe("ClassSchema", () => {
   it("유효한 병과를 통과시킨다", () => {
@@ -203,5 +217,45 @@ describe("CombatConfigSchema", () => {
     expect(CombatConfigSchema.safeParse({ ...validCombatConfig, damageJitter }).success).toBe(
       false,
     );
+  });
+
+  it("혼란 확률이 0~1 밖이면 거부한다", () => {
+    const over = { confusion: { threshold: 30, chance: 1.5 } };
+    const under = { confusion: { threshold: 30, chance: -0.1 } };
+
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, ...over }).success).toBe(false);
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, ...under }).success).toBe(false);
+  });
+
+  it("피격 사기 감소가 음수이면 거부한다", () => {
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, moraleLossOnHit: -1 }).success).toBe(
+      false,
+    );
+  });
+
+  it("거점 회복 비율이 음수이면 거부한다", () => {
+    const strongholdRecovery = { hpRatio: -0.1, morale: 5 };
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, strongholdRecovery }).success).toBe(
+      false,
+    );
+  });
+
+  it("사기·혼란 상수가 빠지면 거부한다", () => {
+    const { moraleMax: _omitted, ...withoutMoraleMax } = validCombatConfig;
+    expect(CombatConfigSchema.safeParse(withoutMoraleMax).success).toBe(false);
+  });
+
+  it("공격 경험치의 하한이 상한보다 크면 거부한다", () => {
+    const exp = { ...validCombatConfig.exp, min: 41, max: 40 };
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, exp }).success).toBe(false);
+  });
+
+  it("경험치 나눗수가 0 이하이면 거부한다", () => {
+    const exp = { ...validCombatConfig.exp, divisor: 0 };
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, exp }).success).toBe(false);
+  });
+
+  it("레벨 상한이 0 이하이면 거부한다", () => {
+    expect(CombatConfigSchema.safeParse({ ...validCombatConfig, maxLevel: 0 }).success).toBe(false);
   });
 });

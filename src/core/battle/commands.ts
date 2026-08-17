@@ -2,6 +2,8 @@ import type { Pos } from "../data/schemas";
 import type { Rng } from "../rng";
 import { physicalDamage } from "./damage";
 import type { BattleEvent } from "./events";
+import { attackExp, gainExp, grantDefeatExp } from "./experience";
+import { changeMorale } from "./morale";
 import { reachableTiles } from "./movement";
 import { classOf, type BattleContext, type BattleState, type Unit } from "./state";
 
@@ -89,6 +91,10 @@ export function applyCommand(
   if (unit.side !== state.phase) {
     throw new BattleCommandError(`${unit.officerId}는 지금 ${state.phase} 페이즈에 움직일 수 없다`);
   }
+  // 혼란은 그 턴의 조작 자체를 막는다([상세 스펙 §1.4]). `acted`보다 먼저 봐서 이유가 화면에 그대로 뜨게 한다.
+  if (unit.confused) {
+    throw new BattleCommandError(`${unit.officerId}는 혼란에 빠져 이번 턴 움직일 수 없다`);
+  }
   // 행동을 마치면 이동도 끝난다 — 순서는 "이동 → 행동" 고정이다([상세 스펙 §1.1]).
   if (unit.acted) throw new BattleCommandError(`${unit.officerId}는 이번 페이즈의 행동을 마쳤다`);
 
@@ -124,10 +130,16 @@ export function applyCommand(
       const events: BattleEvent[] = [
         { type: "attacked", attackerId: unit.officerId, defenderId: target.officerId, damage },
       ];
+      events.push(...gainExp(ctx, unit, attackExp(ctx, damage)));
+
       // 반격은 없다([상세 스펙 §1.1]). 병과 플래그 `counterAttack`을 가진 병과가 데이터에 들어올 때 함께 구현한다.
       if (target.hp <= 0) {
         state.units.splice(state.units.indexOf(target), 1);
         events.push({ type: "defeated", officerId: target.officerId });
+        events.push(...grantDefeatExp(ctx, state, unit));
+      } else {
+        // 살아남은 부대만 사기를 잃는다 — 전장을 떠난 부대의 사기는 남는 상태가 아니다([상세 스펙 §1.4]).
+        events.push(...changeMorale(ctx, target, -ctx.data.combatConfig.moraleLossOnHit));
       }
       return events;
     }

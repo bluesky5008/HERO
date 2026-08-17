@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { endPhase, isPhaseComplete, outcome } from "../../src/core/battle/turn";
+import { beginPhase, endPhase, isPhaseComplete, outcome } from "../../src/core/battle/turn";
 import type { BattleState } from "../../src/core/battle/state";
+import { createRng } from "../../src/core/rng";
 import type { Pos } from "../../src/core/data/schemas";
 import { makeBattle, type UnitSpec } from "./fixtures";
 
@@ -67,6 +68,37 @@ describe("endPhase", () => {
     endPhase(state); // 다시 플레이어 페이즈
     expect(player.moved).toBe(false);
     expect(player.acted).toBe(false);
+  });
+});
+
+describe("beginPhase — 턴 시작 처리 순서 ([상세 스펙 §1.1])", () => {
+  /** 거점([3, 1])이 한 칸 있는 전장. 사기 26에서 거점 회복 +5를 받으면 혼란 임계값 30을 넘는다. */
+  const VILLAGE_MAP = ["........", "...v....", "........"];
+
+  it("거점 회복(②)이 혼란 판정(④)보다 먼저 일어난다", () => {
+    const { ctx, state } = makeBattle(
+      VILLAGE_MAP,
+      [{ officerId: "foot", side: "player", pos: [3, 1], morale: 26 }],
+      { combatConfig: { confusion: { threshold: 30, chance: 1 } } },
+    );
+
+    beginPhase(ctx, state, createRng(1));
+
+    // 회복이 먼저라 사기가 31이 되고, 그래서 확률 1의 혼란 판정을 아예 받지 않는다.
+    expect(state.units[0]!.morale).toBe(31);
+    expect(state.units[0]!.confused).toBe(false);
+  });
+
+  it("거점 밖에서는 같은 사기가 혼란으로 이어진다", () => {
+    const { ctx, state } = makeBattle(
+      VILLAGE_MAP,
+      [{ officerId: "foot", side: "player", pos: [1, 1], morale: 26 }],
+      { combatConfig: { confusion: { threshold: 30, chance: 1 } } },
+    );
+
+    beginPhase(ctx, state, createRng(1));
+
+    expect(state.units[0]!.confused).toBe(true);
   });
 });
 

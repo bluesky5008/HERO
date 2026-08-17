@@ -1,5 +1,5 @@
 import { formatIssues, loadGameData, type GameData } from "../../src/core/data/loader";
-import type { CombatConfig, Family, Pos, Stage } from "../../src/core/data/schemas";
+import type { CombatConfig, Family, GameConfig, Pos, Stage } from "../../src/core/data/schemas";
 import { hpMaxOf, type BattleContext, type BattleState, type Side, type Unit } from "../../src/core/battle/state";
 import { validAnimationSet, validCombatConfig, validConfig, validSprite } from "../data/fixtures";
 
@@ -12,6 +12,7 @@ export const TILE_CHARS: Record<string, string> = {
   ".": "plain",
   f: "forest",
   "^": "mountain",
+  v: "village", // 거점 — 턴 시작 회복과 공격 책략 무효가 걸린다([상세 스펙 §1.7])
   "?": "swamp", // terrain.json에 없는 지형 — 데이터 내성 확인용(NFR-03)
 };
 
@@ -34,7 +35,8 @@ const TERRAIN = [
   // 기병 코스트를 1로 둔다 — 병과 이동 규칙과 지형표가 어긋날 때 어느 쪽이 이기는지 보려면 둘이 달라야 한다.
   { id: "forest", name: "숲", defenseBonus: 0.1, moveCost: moveCost(1, { band: 2 }) },
   { id: "mountain", name: "산", defenseBonus: 0.2, moveCost: moveCost("blocked") },
-].map((terrain) => ({ ...terrain, placeholderColor: "#7fa650", stronghold: false }));
+  { id: "village", name: "마을", defenseBonus: 0.15, moveCost: moveCost(1), stronghold: true },
+].map((terrain) => ({ placeholderColor: "#7fa650", stronghold: false, ...terrain }));
 
 const CLASSES = [
   { id: "sword_soldier", name: "단병", family: "infantry", movement: 5, attackMod: 8, defenseMod: 10 },
@@ -86,6 +88,8 @@ export interface UnitSpec {
   level?: number;
   morale?: number;
   hp?: number;
+  confused?: boolean;
+  exp?: number;
 }
 
 export interface BattleFixtureOptions {
@@ -94,6 +98,8 @@ export interface BattleFixtureOptions {
   weather?: Stage["weather"];
   /** 전투 상수 일부만 바꾼다. 난수 폭을 1~1로 고정하면 공식만 남는다. */
   combatConfig?: Partial<CombatConfig>;
+  /** 게임 설정 일부만 바꾼다(경험치 공유 토글 등). */
+  config?: Partial<GameConfig>;
   /** 모든 상성 배수를 이 값으로 덮어쓴다. 상성이 빠졌을 때와 비교하기 위한 장치. */
   affinityModifier?: number;
 }
@@ -101,7 +107,7 @@ export interface BattleFixtureOptions {
 function gameData(options: BattleFixtureOptions): GameData {
   const families = [...new Set(CLASSES.map((cls) => cls.family))] as Family[];
   const raw = {
-    config: { ...validConfig },
+    config: { ...validConfig, ...options.config },
     combatConfig: { ...validCombatConfig, ...options.combatConfig },
     terrain: TERRAIN,
     classes: CLASSES,
@@ -178,6 +184,8 @@ export function makeBattle(
       pos: spec.pos,
       moved: false,
       acted: false,
+      confused: spec.confused ?? false,
+      exp: spec.exp ?? 0,
     };
   });
 

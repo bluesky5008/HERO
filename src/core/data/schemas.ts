@@ -26,6 +26,12 @@ export const GameConfigSchema = z.object({
   tileSize: z.number().int().positive(),
   logicalWidth: z.number().int().positive(),
   logicalHeight: z.number().int().positive(),
+  /**
+   * 격파 경험치를 생존 아군이 나눠 갖는가([상세 스펙 §1.6]).
+   * 기본 OFF가 원작 동작(막타 독식)이며, 켜는 것은 낮은 레벨 부대 육성 편의 옵션이다.
+   * 설정 화면은 M3에서 만든다 — M2는 값만 읽는다.
+   */
+  shareExp: z.boolean().default(false),
 });
 export type GameConfig = z.infer<typeof GameConfigSchema>;
 
@@ -43,6 +49,42 @@ export const CombatConfigSchema = z.object({
     .object({ min: z.number().positive(), max: z.number().positive() })
     .refine((jitter) => jitter.min <= jitter.max, {
       message: "난수 폭의 최솟값은 최댓값 이하여야 한다",
+    }),
+  /** 사기 상한. 사기 범위는 0~이 값이다([상세 스펙 §1.4]) */
+  moraleMax: z.number().int().positive(),
+  /** 공격을 한 번 받을 때 잃는 사기(초기 2) */
+  moraleLossOnHit: z.number().int().nonnegative(),
+  /** 혼란([상세 스펙 §1.4]) */
+  confusion: z.object({
+    /** 사기가 이 값 미만이면 턴 시작마다 혼란 판정을 받는다(초기 30) */
+    threshold: z.number().int().nonnegative(),
+    /** 그 판정이 혼란으로 이어질 확률 0~1 */
+    chance: z.number().min(0).max(1),
+  }),
+  /** 거점 위 부대의 턴 시작 회복([상세 스펙 §1.7]). 책략치 회복은 M2 TASK-23에서 더한다. */
+  strongholdRecovery: z.object({
+    /** 병력 상한 대비 회복 비율(초기 0.1 = +10%) */
+    hpRatio: z.number().nonnegative(),
+    morale: z.number().int().nonnegative(),
+  }),
+  /** 레벨 상한([상세 스펙 §1.6]). 출진 명단의 레벨 상한과 달리 전투 중 성장의 천장이다. */
+  maxLevel: z.number().int().positive(),
+  /** 경험치([상세 스펙 §1.6]) */
+  exp: z
+    .object({
+      /** 공격 경험치 = 데미지 / 이 값 (내림) */
+      divisor: z.number().positive(),
+      /** 공격 한 번이 주는 경험치의 하한·상한(초기 1~40) */
+      min: z.number().int().nonnegative(),
+      max: z.number().int().positive(),
+      /** 격파 보너스(초기 45 — [상세 스펙 §1.6]의 40~50 범위) */
+      defeatBonus: z.number().int().nonnegative(),
+      /** 이만큼 쌓일 때마다 레벨이 1 오른다(초기 100) */
+      perLevel: z.number().int().positive(),
+    })
+    .refine((exp) => exp.min <= exp.max, {
+      message: "공격 경험치의 하한은 상한 이하여야 한다",
+      path: ["min"],
     }),
 });
 export type CombatConfig = z.infer<typeof CombatConfigSchema>;

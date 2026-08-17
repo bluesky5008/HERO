@@ -1,5 +1,6 @@
 {
   "tileSize": 32,
   "logicalWidth": 1280,
-  "logicalHeight": 720
+  "logicalHeight": 720,
+  "shareExp": false
 }
