@@ -97,3 +97,46 @@ describe("reachableTiles", () => {
     expect(tiles).not.toContain("2,3");
   });
 });
+
+describe("이동 아이템 (mount)", () => {
+  it("탈것을 지니면 이동력이 그만큼 늘어난다", () => {
+    const bare = reachable(PLAIN_7, [{ officerId: "band", side: "player", pos: [3, 3] }]);
+    const mounted = reachable(PLAIN_7, [
+      { officerId: "band", side: "player", pos: [3, 3], items: ["swift_horse"] },
+    ]);
+
+    // 군악대 이동력 4 + 준마 2 = 6
+    expect(mounted.length).toBeGreaterThan(bare.length);
+    expect(mounted).toContain("3,0");
+  });
+
+  it("여러 개를 지니면 더해진다", () => {
+    // 7×7에서는 이동력 6이면 이미 전 칸에 닿아 차이가 드러나지 않는다 — 넓은 맵이 필요하다.
+    const plain13 = Array.from({ length: 13 }, () => ".............");
+    const one = reachable(plain13, [
+      { officerId: "band", side: "player", pos: [6, 6], items: ["swift_horse"] },
+    ]);
+    const two = reachable(plain13, [
+      { officerId: "band", side: "player", pos: [6, 6], items: ["swift_horse", "swift_horse"] },
+    ]);
+
+    expect(two.length).toBeGreaterThan(one.length);
+  });
+
+  it("탈것이 아닌 아이템은 이동력을 바꾸지 않는다", () => {
+    const bare = reachable(PLAIN_7, [{ officerId: "band", side: "player", pos: [3, 3] }]);
+    const carried = reachable(PLAIN_7, [
+      { officerId: "band", side: "player", pos: [3, 3], items: ["iron_sword", "herb"] },
+    ]);
+
+    expect(carried).toEqual(bare);
+  });
+
+  it("진입 불가 지형은 이동력이 늘어도 그대로 막힌다", () => {
+    const tiles = reachable(CORRIDOR, [
+      { officerId: "band", side: "player", pos: [2, 2], items: ["swift_horse"] },
+    ]);
+
+    expect(tiles.every((key) => key.endsWith(",2"))).toBe(true);
+  });
+});

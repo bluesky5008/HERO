@@ -6,6 +6,7 @@ import {
   validOfficer,
   validRawGameData,
   validSprite,
+  validItem,
   validStage,
   validTactic,
 } from "./fixtures";
@@ -65,6 +66,49 @@ describe("loadGameData — 스키마 위반", () => {
     expect(result.data).toBeNull();
     expect(result.issues.length).toBeGreaterThan(0);
     expect(report(result.issues)).toContain("movement");
+  });
+});
+
+describe("loadGameData — 아이템 참조 무결성 (AC-01)", () => {
+  it("아이템 ID가 중복 정의되면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.items = [{ ...validItem }, { ...validItem, name: "철검 사본" }];
+
+    expect(report(loadGameData(raw).issues)).toContain("iron_sword");
+  });
+
+  it("소모품이 없는 책략을 가리키면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.items = [{ ...validItem, type: "consumable", tacticId: "no_such_tactic" }];
+
+    expect(report(loadGameData(raw).issues)).toContain("no_such_tactic");
+  });
+
+  it("전환서가 없는 병과를 가리키면 보고한다", () => {
+    const raw = validRawGameData();
+    raw.items = [{ ...validItem, type: "classChange", classId: "no_such_class" }];
+
+    expect(report(loadGameData(raw).issues)).toContain("no_such_class");
+  });
+
+  it("병과 변경·승급 아이템에 장수 제한이 있으면 경고한다 (FR-07)", () => {
+    const raw = validRawGameData();
+    raw.items = [
+      { ...validItem, id: "sword_book", type: "classChange", classId: "sword_soldier", forbiddenFor: ["liu_bei"] },
+    ];
+
+    const issues = loadGameData(raw).issues;
+
+    expect(report(issues)).toContain("liu_bei");
+    // 개조 확장용 필드이므로 데이터를 막지는 않는다 — 경고로만 남는다.
+    expect(issues.every((issue) => issue.severity === "warning")).toBe(true);
+  });
+
+  it("장비 아이템의 장수 제한은 경고하지 않는다 — 설계가 막은 것은 변경·승급 아이템이다", () => {
+    const raw = validRawGameData();
+    raw.items = [{ ...validItem, forbiddenFor: ["liu_bei"] }];
+
+    expect(loadGameData(raw).issues).toEqual([]);
   });
 });
 

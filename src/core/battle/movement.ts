@@ -45,12 +45,21 @@ function stepCost(cls: UnitClass, terrain: Terrain | undefined): number | null {
   return cls.movementRules.halved.includes(terrain.id) ? base * 2 : base;
 }
 
+/** 탈것이 더해 주는 이동력([전체 설계 §4.5]). 여럿 지니면 더해지고, 진입 불가 지형은 그대로 막힌다. */
+function mountBonus(ctx: BattleContext, unit: Unit): number {
+  return unit.items.reduce((bonus, itemId) => {
+    const item = ctx.data.items.find((candidate) => candidate.id === itemId);
+    return item?.type === "mount" ? bonus + item.value : bonus;
+  }, 0);
+}
+
 /**
  * 부대가 이번에 이동해 설 수 있는 칸의 목록(제자리 포함).
  * 적 부대가 선 칸은 지나갈 수 없고, 아군이 선 칸은 지나갈 수는 있으나 멈출 수 없다.
  */
 export function reachableTiles(ctx: BattleContext, state: BattleState, unit: Unit): Pos[] {
   const cls = classOf(ctx, unit);
+  const movement = cls.movement + mountBonus(ctx, unit);
   const { width, height } = ctx.stage.map;
 
   const enemies = new Set(
@@ -86,7 +95,7 @@ export function reachableTiles(ctx: BattleContext, state: BattleState, unit: Uni
       if (step === null) continue;
 
       const total = cost + step;
-      if (total > cls.movement || total >= (best.get(key(next)) ?? Infinity)) continue;
+      if (total > movement || total >= (best.get(key(next)) ?? Infinity)) continue;
 
       best.set(key(next), total);
       frontier.push({ pos: next, cost: total });

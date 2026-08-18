@@ -6,6 +6,7 @@ import type {
   GameConfig,
   Officer,
   Pos,
+  Item,
   Sprite,
   Stage,
   Tactic,
@@ -20,6 +21,8 @@ export interface DataIssue {
   /** 파일 안에서의 위치 (예: `classes[2].sprite`) */
   path: string;
   message: string;
+  /** 없으면 오류다. 경고는 보고만 하고 `npm run validate`를 실패시키지 않는다. */
+  severity?: "warning";
 }
 
 export interface GameData {
@@ -28,6 +31,7 @@ export interface GameData {
   terrain: Terrain[];
   classes: UnitClass[];
   tactics: Tactic[];
+  items: Item[];
   officers: Officer[];
   affinity: Affinity[];
   sprites: Record<string, Sprite>;
@@ -39,6 +43,12 @@ const issue = (source: string, path: string, message: string): DataIssue => ({
   source,
   path,
   message,
+});
+
+/** 데이터를 막지는 않지만 사람이 봐야 하는 문제. CLI는 경고만으로 실패하지 않는다. */
+const warning = (source: string, path: string, message: string): DataIssue => ({
+  ...issue(source, path, message),
+  severity: "warning",
 });
 
 function duplicateIds(ids: string[]): string[] {
@@ -70,6 +80,9 @@ export function checkIntegrity(data: GameData): DataIssue[] {
   }
   for (const id of duplicateIds(data.tactics.map((t) => t.id))) {
     issues.push(issue("tactics.json", `id=${id}`, `책략 ID가 중복 정의되었다: ${id}`));
+  }
+  for (const id of duplicateIds(data.items.map((i) => i.id))) {
+    issues.push(issue("items.json", `id=${id}`, `아이템 ID가 중복 정의되었다: ${id}`));
   }
   for (const id of duplicateIds(data.officers.map((o) => o.id))) {
     issues.push(issue("officers.json", `id=${id}`, `무장 ID가 중복 정의되었다: ${id}`));
@@ -160,6 +173,32 @@ export function checkIntegrity(data: GameData): DataIssue[] {
           );
         }
       }
+    }
+  });
+
+  data.items.forEach((item, index) => {
+    const at = `items[${index}] (${item.id})`;
+
+    if (item.type === "consumable" && item.tacticId && !tacticIds.has(item.tacticId)) {
+      issues.push(
+        issue("items.json", `${at}.tacticId`, `소모품이 복제할 책략 '${item.tacticId}'가 tactics.json에 없다`),
+      );
+    }
+    if (item.type === "classChange" && item.classId && !classIds.has(item.classId)) {
+      issues.push(
+        issue("items.json", `${at}.classId`, `전환 대상 병과 '${item.classId}'가 classes.json에 없다`),
+      );
+    }
+    // 병과 변경·승급 아이템에 장수 제한을 두지 않는 것이 [FR-07]의 설계 결정이다.
+    // 필드 자체는 개조 확장용으로 남겨 두므로 데이터를 막지 않고 경고만 남긴다.
+    if ((item.type === "classChange" || item.type === "classUpgrade") && item.forbiddenFor.length > 0) {
+      issues.push(
+        warning(
+          "items.json",
+          `${at}.forbiddenFor`,
+          `병과 변경·승급 아이템에는 장수 제한을 두지 않는다(FR-07): ${item.forbiddenFor.join(", ")}`,
+        ),
+      );
     }
   });
 

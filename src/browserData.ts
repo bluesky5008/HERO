@@ -4,6 +4,7 @@ import animations from "../data/assets-map/animations.json";
 import classes from "../data/classes.json";
 import combatConfig from "../data/config/combat-config.json";
 import config from "../data/config/game-config.json";
+import items from "../data/items.json";
 import officers from "../data/officers.json";
 import sprites from "../data/assets-map/sprites.json";
 import tactics from "../data/tactics.json";
@@ -32,6 +33,7 @@ export function readBrowserGameData(): RawGameData {
     terrain,
     classes,
     tactics,
+    items,
     officers,
     affinity,
     sprites,

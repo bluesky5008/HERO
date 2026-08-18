@@ -121,6 +121,25 @@ const TACTICS = [
   ...tactic,
 }));
 
+/** 타입별 최소 샘플. 장비 보정(무기·병법서·이동)을 시험하는 데 필요한 것만 둔다. */
+const ITEMS = [
+  { id: "iron_sword", name: "철검", type: "weapon", value: 1.2 },
+  { id: "great_sword", name: "대검", type: "weapon", value: 1.5 },
+  { id: "war_manual", name: "병법서", type: "manual", value: 1.3 },
+  { id: "swift_horse", name: "준마", type: "mount", value: 2 },
+  { id: "herb", name: "약초", type: "regen", value: 100 },
+  { id: "fire_scroll", name: "화계 두루마리", type: "consumable", tacticId: "fire_arrow" },
+  { id: "spear_manual", name: "장창", type: "classUpgrade" },
+  { id: "sword_book", name: "검술지침서", type: "classChange", classId: "sword_soldier" },
+].map((item) => ({
+  value: 0,
+  tacticId: null,
+  classId: null,
+  price: null,
+  forbiddenFor: [],
+  ...item,
+}));
+
 /** 상성 고리: 기병 > 보병 > 궁병 > 기병(방어측 배수 — 유리 0.75 / 불리 1.25). */
 const STRONG_AGAINST: Partial<Record<Family, Family>> = {
   cavalry: "infantry",
@@ -155,6 +174,7 @@ export interface UnitSpec {
   confused?: boolean;
   exp?: number;
   mp?: number;
+  items?: string[];
 }
 
 export interface BattleFixtureOptions {
@@ -177,6 +197,7 @@ function gameData(options: BattleFixtureOptions): GameData {
     terrain: TERRAIN,
     classes: CLASSES,
     tactics: TACTICS,
+    items: ITEMS,
     officers: OFFICERS.map((officer) => ({ ...officer, ...options.officers?.[officer.id] })),
     affinity: families.flatMap((attacker) =>
       families.map((defender) => ({
@@ -255,6 +276,7 @@ export function makeBattle(
       exp: spec.exp ?? 0,
       mp: spec.mp ?? mpMax,
       mpMax,
+      items: spec.items ?? [],
     };
   });
 

@@ -4,6 +4,7 @@ import {
   ClassSchema,
   CombatConfigSchema,
   GameConfigSchema,
+  ItemSchema,
   OfficerSchema,
   StageSchema,
   TacticSchema,
@@ -15,10 +16,55 @@ import {
   validCombatConfig,
   validConfig,
   validOfficer,
+  validItem,
   validStage,
   validTactic,
   validTerrain,
 } from "./fixtures";
+
+describe("ItemSchema", () => {
+  it("유효한 아이템을 통과시킨다", () => {
+    expect(ItemSchema.safeParse(validItem).success).toBe(true);
+  });
+
+  it("알 수 없는 종류를 거부한다", () => {
+    expect(ItemSchema.safeParse({ ...validItem, type: "amulet" }).success).toBe(false);
+  });
+
+  it("설계가 정한 종류 7가지를 모두 통과시킨다 ([전체 설계 §4.5])", () => {
+    const types = [
+      "weapon",
+      "manual",
+      "mount",
+      "regen",
+      "classChange",
+      "classUpgrade",
+      "consumable",
+    ];
+
+    for (const type of types) {
+      expect(ItemSchema.safeParse({ ...validItem, type }).success).toBe(true);
+    }
+  });
+
+  it("효과 값이 음수이면 거부한다", () => {
+    expect(ItemSchema.safeParse({ ...validItem, value: -1 }).success).toBe(false);
+  });
+
+  it("가격이 음수이면 거부한다", () => {
+    expect(ItemSchema.safeParse({ ...validItem, price: -1 }).success).toBe(false);
+  });
+
+  it("보물로만 얻는 아이템은 가격이 없다", () => {
+    expect(ItemSchema.safeParse({ ...validItem, price: null }).success).toBe(true);
+  });
+
+  it("사용 제한은 적지 않으면 빈 목록이다 (FR-07의 설계 결정)", () => {
+    const { forbiddenFor: _omitted, ...withoutLimit } = validItem;
+
+    expect(ItemSchema.parse(withoutLimit).forbiddenFor).toEqual([]);
+  });
+});
 
 describe("TacticSchema", () => {
   it("유효한 책략을 통과시킨다", () => {

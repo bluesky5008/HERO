@@ -51,6 +51,17 @@ export const validTactic = {
   effect: "damage",
 };
 
+export const validItem = {
+  id: "iron_sword",
+  name: "철검",
+  type: "weapon",
+  value: 1.2,
+  tacticId: null,
+  classId: null,
+  price: 300,
+  forbiddenFor: [],
+};
+
 export const validAnimationSet = {
   idle: { frames: [0, 1], fps: 2 },
   move: { frames: [2, 3, 4, 5], fps: 8 },
@@ -117,6 +128,7 @@ export const validCombatConfig = {
   confusion: { threshold: 30, chance: 0.5 },
   strongholdRecovery: { hpRatio: 0.1, morale: 5, mp: 2 },
   mpIntDivisor: 4,
+  itemSlots: 8,
   tactic: { hitBase: 50, hitMin: 10, hitMax: 100, damageIntDivisor: 200, strongholdBlocks: ["damage"] },
   maxLevel: 99,
   exp: { divisor: 10, min: 1, max: 40, defeatBonus: 45, perLevel: 100 },
@@ -131,6 +143,7 @@ export function validRawGameData(): RawGameData {
     terrain: [{ ...validTerrain }, { ...validTerrain, id: "forest", name: "숲" }],
     classes: [{ ...validClass, tactics: ["fire_arrow"] }],
     tactics: [{ ...validTactic }],
+    items: [{ ...validItem }],
     officers: [
       { ...validOfficer },
       { ...validOfficer, id: "guan_yu", name: "관우", war: 97, ldr: 95 },

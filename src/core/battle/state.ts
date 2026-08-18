@@ -31,6 +31,8 @@ export interface Unit {
   mp: number;
   /** 책략치 상한 — 지력과 레벨에서 파생된다 */
   mpMax: number;
+  /** 지닌 아이템 ID. `combatConfig.itemSlots`가 상한이다([FR-07]). */
+  items: string[];
 }
 
 export interface BattleState {
@@ -167,6 +169,7 @@ export function createBattleState(
         exp: 0,
         mp: mpMax,
         mpMax,
+        items: [],
       });
     }
   }

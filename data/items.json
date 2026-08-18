@@ -1,0 +1,82 @@
+[
+  {
+    "id": "iron_sword",
+    "name": "철검",
+    "type": "weapon",
+    "value": 1.2,
+    "tacticId": null,
+    "classId": null,
+    "price": 300,
+    "forbiddenFor": []
+  },
+  {
+    "id": "great_sword",
+    "name": "청강검",
+    "type": "weapon",
+    "value": 1.5,
+    "tacticId": null,
+    "classId": null,
+    "price": 900,
+    "forbiddenFor": []
+  },
+  {
+    "id": "war_manual",
+    "name": "손자병법",
+    "type": "manual",
+    "value": 1.3,
+    "tacticId": null,
+    "classId": null,
+    "price": 800,
+    "forbiddenFor": []
+  },
+  {
+    "id": "swift_horse",
+    "name": "적토마",
+    "type": "mount",
+    "value": 2,
+    "tacticId": null,
+    "classId": null,
+    "price": null,
+    "forbiddenFor": []
+  },
+  {
+    "id": "herb",
+    "name": "약초",
+    "type": "regen",
+    "value": 100,
+    "tacticId": null,
+    "classId": null,
+    "price": 200,
+    "forbiddenFor": []
+  },
+  {
+    "id": "fire_scroll",
+    "name": "화계 두루마리",
+    "type": "consumable",
+    "value": 0,
+    "tacticId": "fire_arrow",
+    "classId": null,
+    "price": 250,
+    "forbiddenFor": []
+  },
+  {
+    "id": "long_spear",
+    "name": "장창",
+    "type": "classUpgrade",
+    "value": 0,
+    "tacticId": null,
+    "classId": null,
+    "price": null,
+    "forbiddenFor": []
+  },
+  {
+    "id": "sword_book",
+    "name": "검술지침서",
+    "type": "classChange",
+    "value": 0,
+    "tacticId": null,
+    "classId": "sword_soldier",
+    "price": null,
+    "forbiddenFor": []
+  }
+]

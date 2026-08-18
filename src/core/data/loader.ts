@@ -5,6 +5,7 @@ import {
   ClassSchema,
   CombatConfigSchema,
   GameConfigSchema,
+  ItemSchema,
   OfficerSchema,
   SpriteSchema,
   StageSchema,
@@ -25,6 +26,7 @@ export interface RawGameData {
   terrain: unknown;
   classes: unknown;
   tactics: unknown;
+  items: unknown;
   officers: unknown;
   affinity: unknown;
   sprites: unknown;
@@ -76,6 +78,7 @@ export function loadGameData(raw: RawGameData): LoadResult {
   const terrain = parse(TerrainSchema.array(), "terrain.json", raw.terrain, issues);
   const classes = parse(ClassSchema.array(), "classes.json", raw.classes, issues);
   const tactics = parse(TacticSchema.array(), "tactics.json", raw.tactics, issues);
+  const items = parse(ItemSchema.array(), "items.json", raw.items, issues);
   const officers = parse(OfficerSchema.array(), "officers.json", raw.officers, issues);
   const affinity = parse(AffinitySchema.array(), "affinity.json", raw.affinity, issues);
   const sprites = parse(
@@ -105,6 +108,7 @@ export function loadGameData(raw: RawGameData): LoadResult {
     !terrain ||
     !classes ||
     !tactics ||
+    !items ||
     !officers ||
     !affinity ||
     !sprites ||
@@ -120,6 +124,7 @@ export function loadGameData(raw: RawGameData): LoadResult {
     terrain,
     classes,
     tactics,
+    items,
     officers,
     affinity,
     sprites,

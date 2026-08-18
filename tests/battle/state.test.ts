@@ -55,6 +55,13 @@ describe("createBattleState", () => {
     expect(enemy.hpMax).toBeLessThan(grown.hpMax);
   });
 
+  it("소지품은 비어 있고 상한이 설정에 있다 (FR-07)", () => {
+    const state = build({});
+
+    expect(state.units.map((unit) => unit.items)).toEqual([[], []]);
+    expect(data.combatConfig.itemSlots).toBe(8);
+  });
+
   it("모든 부대는 경험치 0에서 시작한다", () => {
     expect(build({}).units.map((unit) => unit.exp)).toEqual([0, 0]);
   });

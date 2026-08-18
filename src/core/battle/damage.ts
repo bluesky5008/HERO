@@ -4,7 +4,7 @@ import { classOf, officerOf, terrainAt, type BattleContext, type Unit } from "./
 /**
  * 물리 데미지 공식([상세 스펙 §1.3], DES-01 → FR-03, AC-04).
  * 상수는 전부 `combat-config.json`에서 읽는다 — 수치 조정에 코드를 고치지 않는다(NFR-06).
- * 아이템 보정은 아이템이 들어오는 M2에서 이 식의 곱셈 항으로 붙는다.
+ * 장비 보정은 소지품에서 읽은 배수의 곱이다 — 장비가 없으면 1이므로 M1이 고정한 값이 그대로 나온다.
  */
 
 /**
@@ -20,6 +20,17 @@ function affinityModifier(ctx: BattleContext, attacker: Unit, defender: Unit): n
       (entry) => entry.attacker === attackerFamily && entry.defender === defenderFamily,
     )?.modifier ?? 1
   );
+}
+
+/**
+ * 지닌 장비가 데미지에 곱하는 배수([상세 스펙 §1.3]의 `itemAtkMul`·`itemDefMul`).
+ * 같은 종류를 여럿 지니면 곱해지고, 장비가 아닌 아이템은 배수 1이라 결과를 바꾸지 않는다.
+ */
+function itemMultiplier(ctx: BattleContext, unit: Unit, type: "weapon" | "manual"): number {
+  return unit.items.reduce((multiplier, itemId) => {
+    const item = ctx.data.items.find((candidate) => candidate.id === itemId);
+    return item?.type === type ? multiplier * item.value : multiplier;
+  }, 1);
 }
 
 /** 데미지 계산이 난수원에서 실제로 쓰는 부분. 예상 데미지는 난수를 소비하지 않고 폭의 양 끝을 넣는다. */
@@ -38,11 +49,13 @@ export function physicalDamage(
 
   const attack =
     (attacker.level + 10) *
-    (attacker.morale + attackerOfficer.war + classOf(ctx, attacker).attackMod);
+    (attacker.morale + attackerOfficer.war + classOf(ctx, attacker).attackMod) *
+    itemMultiplier(ctx, attacker, "weapon");
 
   const defense =
     (defender.level + 10) *
     (defender.morale + defenderOfficer.ldr + classOf(ctx, defender).defenseMod) *
+    itemMultiplier(ctx, defender, "manual") *
     affinityModifier(ctx, attacker, defender) *
     (1 + (terrainAt(ctx, defender.pos)?.defenseBonus ?? 0));
 

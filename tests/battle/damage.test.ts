@@ -28,6 +28,8 @@ function hit(
 }
 
 const PLAIN = [".....", ".....", ".....", ".....", "....."];
+/** [2,1]만 숲인 전장 — 방어측 지형 보정과 아이템 보정이 함께 걸리는지 본다. */
+const FOREST_MAP = [".....", "..f..", ".....", ".....", "....."];
 const at = (officerId: string, side: "player" | "enemy", pos: [number, number]): UnitSpec => ({
   officerId,
   side,
@@ -227,5 +229,70 @@ describe("physicalDamage — 데이터 내성", () => {
 
     const neutral = hit(PLAIN, at("foot", "player", [0, 0]), at("band", "enemy", [1, 0]));
     expect(neutral).toBeGreaterThan(0);
+  });
+});
+
+describe("아이템 보정 (VER-10 — 상성 × 지형 × 아이템)", () => {
+  const bare = (): number => hit(PLAIN, at("foot", "player", [1, 1]), at("foot2", "enemy", [2, 1]));
+
+  it("장비가 없으면 M1이 고정한 값 그대로다", () => {
+    // 회귀 판정 기준: 아이템 항이 붙어도 소지품이 비면 배수가 1이라 결과가 바뀌지 않는다.
+    expect(bare()).toBe(
+      hit(PLAIN, { ...at("foot", "player", [1, 1]), items: [] }, at("foot2", "enemy", [2, 1])),
+    );
+  });
+
+  it("무기는 공격측 데미지를 배수만큼 올린다", () => {
+    const armed = hit(
+      PLAIN,
+      { ...at("foot", "player", [1, 1]), items: ["iron_sword"] },
+      at("foot2", "enemy", [2, 1]),
+    );
+
+    // 반올림은 공식 끝에서 한 번만 일어나므로 이미 반올림된 값에 배수를 곱하면 1 어긋날 수 있다.
+    // 검증하려는 것은 "배수만큼 오른다"이므로 비율로 본다.
+    expect(armed / bare()).toBeCloseTo(1.2, 2);
+  });
+
+  it("병법서는 방어측이 받는 데미지를 배수만큼 줄인다", () => {
+    const guarded = hit(
+      PLAIN,
+      at("foot", "player", [1, 1]),
+      { ...at("foot2", "enemy", [2, 1]), items: ["war_manual"] },
+    );
+
+    expect(guarded / bare()).toBeCloseTo(1 / 1.3, 2);
+  });
+
+  it("같은 종류를 여러 개 지니면 배수가 곱해진다", () => {
+    const double = hit(
+      PLAIN,
+      { ...at("foot", "player", [1, 1]), items: ["iron_sword", "great_sword"] },
+      at("foot2", "enemy", [2, 1]),
+    );
+
+    expect(double / bare()).toBeCloseTo(1.2 * 1.5, 2);
+  });
+
+  it("장비가 아닌 아이템은 데미지를 바꾸지 않는다", () => {
+    const carried = hit(
+      PLAIN,
+      { ...at("foot", "player", [1, 1]), items: ["herb", "swift_horse", "fire_scroll"] },
+      at("foot2", "enemy", [2, 1]),
+    );
+
+    expect(carried).toBe(bare());
+  });
+
+  it("상성·지형 보정과 함께 걸린다", () => {
+    // 기병(유리) → 보병, 방어측은 숲(+10%), 공격측은 무기 1.2배
+    const plain = hit(FOREST_MAP, at("horse", "player", [1, 1]), at("foot2", "enemy", [2, 1]));
+    const armed = hit(
+      FOREST_MAP,
+      { ...at("horse", "player", [1, 1]), items: ["iron_sword"] },
+      at("foot2", "enemy", [2, 1]),
+    );
+
+    expect(armed / plain).toBeCloseTo(1.2, 2);
   });
 });

@@ -7,6 +7,7 @@
   "confusion": { "threshold": 30, "chance": 0.5 },
   "strongholdRecovery": { "hpRatio": 0.1, "morale": 5, "mp": 2 },
   "mpIntDivisor": 4,
+  "itemSlots": 8,
   "tactic": {
     "hitBase": 50,
     "hitMin": 10,

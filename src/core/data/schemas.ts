@@ -71,6 +71,8 @@ export const CombatConfigSchema = z.object({
   }),
   /** 책략치 상한식 `floor(지력 / 이 값) + 레벨`([상세 스펙 §1.5]) */
   mpIntDivisor: z.number().int().positive(),
+  /** 부대 하나가 지닐 수 있는 아이템 수([FR-07] — 초기 8) */
+  itemSlots: z.number().int().positive(),
   /** 책략 판정([상세 스펙 §1.5]) */
   tactic: z.object({
     /** 명중률 `clamp(hitBase + 지력차, hitMin, hitMax)` (백분율) */
@@ -139,6 +141,41 @@ export const TacticSchema = z.object({
   effect: z.enum(["damage", "moraleDown", "confuse", "healHp", "healMorale", "healBoth"]),
 });
 export type Tactic = z.infer<typeof TacticSchema>;
+
+export const ITEM_TYPES = [
+  "weapon",
+  "manual",
+  "mount",
+  "regen",
+  "classChange",
+  "classUpgrade",
+  "consumable",
+] as const;
+
+/**
+ * 아이템([전체 설계 §4.5], [상세 스펙 §1.6]).
+ * `value`의 의미는 `type`이 정한다 — `weapon`·`manual`은 데미지에 곱하는 배수,
+ * `mount`는 이동력 증가, `regen`은 턴 회복량이다. 나머지 유형은 `value`를 쓰지 않는다.
+ */
+export const ItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  type: z.enum(ITEM_TYPES),
+  value: z.number().nonnegative().default(0),
+  /** `consumable`이 복제하는 책략 */
+  tacticId: z.string().min(1).nullable().default(null),
+  /** `classChange`가 바꿀 병과 */
+  classId: z.string().min(1).nullable().default(null),
+  /** 상점 가격. 전투맵 보물로만 얻는 아이템은 `null`이다. */
+  price: z.number().int().nonnegative().nullable(),
+  /**
+   * 사용할 수 없는 무장. **개조 확장용으로만 남겨 둔 필드다** —
+   * 병과 변경·승급 아이템에 값을 넣지 않는 것이 [FR-07]의 설계 결정이고,
+   * 값이 들어가면 참조 무결성 검사가 경고한다.
+   */
+  forbiddenFor: z.array(z.string().min(1)).default([]),
+});
+export type Item = z.infer<typeof ItemSchema>;
 
 /** 진입 불가는 숫자 코스트 대신 "blocked"로 표기한다. */
 const MoveCostSchema = z.union([z.number().int().positive(), z.literal("blocked")]);
