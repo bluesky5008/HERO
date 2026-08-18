@@ -38,6 +38,29 @@ function recoverFromItems(ctx: BattleContext, unit: Unit): BattleEvent[] {
 }
 
 /**
+ * 동적 날씨의 전이([상세 스펙 §1.7]). 날씨는 진영이 아니라 전장 전체의 것이므로
+ * 턴이 새로 시작할 때(플레이어 페이즈) 한 번만 판정한다 — 페이즈마다 바꾸면 한 턴에 두 번 바뀐다.
+ */
+function rollWeather(ctx: BattleContext, state: BattleState, rng: Rng): BattleEvent[] {
+  const weather = ctx.stage.weather;
+  if (typeof weather === "string" || state.phase !== "player") return [];
+
+  if (state.weatherTurnsLeft > 0) {
+    state.weatherTurnsLeft -= 1;
+    if (state.weatherTurnsLeft > 0) return [];
+
+    state.weather = "clear";
+    return [{ type: "weatherChanged", to: "clear" }];
+  }
+
+  if (rng.range(0, 1) >= weather.rainChance) return [];
+
+  state.weather = "rain";
+  state.weatherTurnsLeft = weather.rainDuration;
+  return [{ type: "weatherChanged", to: "rain" }];
+}
+
+/**
  * 차례를 받은 진영의 턴 시작 처리. 순서는 [상세 스펙 §1.1]의
  * ① 자동 저장 → ② 거점 회복 → ③ 자연 회복 아이템 → ④ 상태이상 판정 → ⑤ 턴 이벤트로 고정한다.
  * 단계를 나눠 두므로 뒤 작업(①은 M3, ⑤는 TASK-29)이 자리만 채우면 된다.
@@ -47,6 +70,7 @@ export function beginPhase(ctx: BattleContext, state: BattleState, rng: Rng): Ba
   const actors = state.units.filter((unit) => unit.side === state.phase);
 
   return [
+    ...rollWeather(ctx, state, rng),
     ...actors.flatMap((unit) => recoverOnStronghold(ctx, unit)),
     ...actors.flatMap((unit) => recoverFromItems(ctx, unit)),
     ...actors.flatMap((unit) => rollConfusion(ctx, unit, rng)),

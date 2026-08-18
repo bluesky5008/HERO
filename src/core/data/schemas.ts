@@ -113,6 +113,23 @@ export type CombatConfig = z.infer<typeof CombatConfigSchema>;
 export const WeatherSchema = z.enum(["clear", "rain"]);
 export type Weather = z.infer<typeof WeatherSchema>;
 
+/**
+ * 스테이지의 날씨([상세 스펙 §1.7]).
+ * 문자열이면 전투 내내 그 날씨로 고정된다 — M1 스테이지 데이터가 쓰던 표기를 그대로 읽는다.
+ * 객체면 턴 시작마다 확률로 비가 오고 정해진 턴 수만큼 유지된다.
+ */
+export const StageWeatherSchema = z.union([
+  WeatherSchema,
+  z.object({
+    initial: WeatherSchema,
+    /** 턴 시작마다 비가 시작될 확률 0~1 */
+    rainChance: z.number().min(0).max(1),
+    /** 비가 한 번 시작되면 유지되는 턴 수 */
+    rainDuration: z.number().int().positive(),
+  }),
+]);
+export type StageWeather = z.infer<typeof StageWeatherSchema>;
+
 /** 지형·날씨별 효과 배수. 적히지 않은 키는 배수 1로 본다. */
 const BonusTableSchema = z.record(z.string().min(1), z.number().nonnegative());
 
@@ -343,7 +360,7 @@ export const StageSchema = z.object({
         }
       });
     }),
-  weather: WeatherSchema,
+  weather: StageWeatherSchema,
   deployment: z
     .object({
       maxUnits: z.number().int().positive(),
@@ -357,6 +374,8 @@ export const StageSchema = z.object({
       path: ["maxUnits"],
     }),
   enemies: z.array(StageUnitSchema).min(1),
+  /** 맵에 묻힌 보물·군량고. 조사로 한 번만 얻는다([상세 스펙 §1.7]). */
+  treasures: z.array(z.object({ pos: PosSchema, itemId: z.string().min(1) })).default([]),
   victory: VictoryConditionSchema,
   defeat: DefeatConditionSchema,
 });

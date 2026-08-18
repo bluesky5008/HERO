@@ -1,6 +1,6 @@
 import { formatIssues, loadGameData, type GameData } from "../../src/core/data/loader";
 import type { CombatConfig, Family, GameConfig, Pos, Stage } from "../../src/core/data/schemas";
-import { hpMaxOf, mpMaxOf, type BattleContext, type BattleState, type Side, type Unit } from "../../src/core/battle/state";
+import { hpMaxOf, initialWeather, mpMaxOf, type BattleContext, type BattleState, type Side, type Unit } from "../../src/core/battle/state";
 import { validAnimationSet, validCombatConfig, validConfig, validSprite } from "../data/fixtures";
 
 /**
@@ -192,6 +192,8 @@ export interface BattleFixtureOptions {
   /** 무장 능력치를 테스트마다 바꾼다(무력·통솔 대조 등). */
   officers?: Partial<Record<string, { war?: number; int?: number; ldr?: number }>>;
   weather?: Stage["weather"];
+  /** 맵에 묻을 보물([상세 스펙 §1.7]) */
+  treasures?: Stage["treasures"];
   /** 전투 상수 일부만 바꾼다. 난수 폭을 1~1로 고정하면 공식만 남는다. */
   combatConfig?: Partial<CombatConfig>;
   /** 게임 설정 일부만 바꾼다(경험치 공유 토글 등). */
@@ -239,7 +241,7 @@ function gameData(options: BattleFixtureOptions): GameData {
   return data;
 }
 
-function makeStage(rows: string[], weather: Stage["weather"]): Stage {
+function makeStage(rows: string[], weather: Stage["weather"], treasures: Stage["treasures"]): Stage {
   const tiles = rows.map((row) =>
     [...row].map((char) => TILE_CHARS[char] ?? `알 수 없는 타일 문자 '${char}'`),
   );
@@ -250,6 +252,7 @@ function makeStage(rows: string[], weather: Stage["weather"]): Stage {
     weather,
     deployment: { maxUnits: 1, zone: [[0, 0]] },
     enemies: [{ officerId: "foot", level: 1, morale: 100, pos: [0, 0] }],
+    treasures,
     victory: { type: "annihilateEnemies" },
     defeat: { type: "officerLost", officerIds: ["foot"] },
   };
@@ -265,7 +268,7 @@ export function makeBattle(
   options: BattleFixtureOptions = {},
 ): { ctx: BattleContext; state: BattleState } {
   const data = gameData(options);
-  const stage = makeStage(rows, options.weather ?? "clear");
+  const stage = makeStage(rows, options.weather ?? "clear", options.treasures ?? []);
 
   const units: Unit[] = specs.map((spec) => {
     const officer = data.officers.find((candidate) => candidate.id === spec.officerId);
@@ -293,7 +296,17 @@ export function makeBattle(
     };
   });
 
-  return { ctx: { data, stage }, state: { units, turn: 1, phase: "player", weather: stage.weather } };
+  return {
+    ctx: { data, stage },
+    state: {
+      units,
+      turn: 1,
+      phase: "player",
+      weather: initialWeather(stage),
+      weatherTurnsLeft: 0,
+      treasuresTaken: [],
+    },
+  };
 }
 
 /** 좌표 집합 비교용 — 순서에 의존하지 않는다. */

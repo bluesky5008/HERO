@@ -1,5 +1,5 @@
 import type { GameData } from "../data/integrity";
-import type { CombatConfig, Officer, Pos, Stage, StageUnit, UnitClass } from "../data/schemas";
+import type { CombatConfig, Officer, Pos, Stage, StageUnit, UnitClass, Weather } from "../data/schemas";
 
 /**
  * 전투 상태와 그 구성([전체 설계 §6.3], DES-01).
@@ -40,7 +40,12 @@ export interface BattleState {
   /** 1부터 시작하는 턴 수 */
   turn: number;
   phase: Side;
-  weather: Stage["weather"];
+  /** 지금 날씨. 스테이지가 동적 날씨를 정했으면 턴 시작마다 바뀐다([상세 스펙 §1.7]). */
+  weather: Weather;
+  /** 비가 남은 턴 수. 고정 날씨 스테이지에서는 언제나 0이다. */
+  weatherTurnsLeft: number;
+  /** 이미 가져간 보물의 좌표 키(`"x,y"`). 보물은 1회성이다. */
+  treasuresTaken: string[];
 }
 
 /**
@@ -88,7 +93,12 @@ export function mpMaxOf(config: CombatConfig, officer: Officer, level: number): 
   return Math.floor(officer.int / config.mpIntDivisor) + level;
 }
 
-const posKey = ([x, y]: Pos): string => `${x},${y}`;
+export const posKey = ([x, y]: Pos): string => `${x},${y}`;
+
+/** 전투를 시작할 때의 날씨. 스테이지가 문자열로 적었으면 그 값, 동적이면 지정한 시작 날씨다. */
+export function initialWeather(stage: Stage): Weather {
+  return typeof stage.weather === "string" ? stage.weather : stage.weather.initial;
+}
 
 /**
  * 스테이지 데이터와 출진 배치로 전투 시작 상태를 만든다.
@@ -174,5 +184,12 @@ export function createBattleState(
     }
   }
 
-  return { units, turn: 1, phase: "player", weather: stage.weather };
+  return {
+    units,
+    turn: 1,
+    phase: "player",
+    weather: initialWeather(stage),
+    weatherTurnsLeft: 0,
+    treasuresTaken: [],
+  };
 }

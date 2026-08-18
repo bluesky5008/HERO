@@ -271,6 +271,25 @@ function checkStageBattleSetup(data: GameData): DataIssue[] {
       }
     });
 
+    const itemIds = new Set(data.items.map((item) => item.id));
+    stage.treasures.forEach((treasure, index) => {
+      const at = `treasures[${index}]`;
+      if (!inMap(treasure.pos)) {
+        issues.push(
+          issue(
+            source,
+            `${at}.pos`,
+            `보물 좌표 [${treasure.pos[0]}, ${treasure.pos[1]}]가 맵(${stage.map.width}×${stage.map.height}) 밖이다`,
+          ),
+        );
+      }
+      if (!itemIds.has(treasure.itemId)) {
+        issues.push(
+          issue(source, `${at}.itemId`, `보물이 가리킨 아이템 '${treasure.itemId}'가 items.json에 없다`),
+        );
+      }
+    });
+
     stage.deployment.roster?.forEach((entry, index) => {
       requireOfficer(`deployment.roster[${index}].officerId`, entry.officerId);
     });

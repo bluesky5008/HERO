@@ -69,6 +69,35 @@ describe("loadGameData — 스키마 위반", () => {
   });
 });
 
+describe("loadGameData — 보물 참조 무결성 (AC-01)", () => {
+  const withTreasures = (treasures: { pos: [number, number]; itemId: string }[]) => {
+    const raw = validRawGameData();
+    raw.stages = { "stage-test.json": { ...structuredClone(validStage), treasures } };
+    return loadGameData(raw).issues;
+  };
+
+  it("보물이 맵 밖 좌표를 가리키면 보고한다", () => {
+    expect(report(withTreasures([{ pos: [9, 9], itemId: "iron_sword" }]))).toContain("9, 9");
+  });
+
+  it("보물이 없는 아이템을 가리키면 보고한다", () => {
+    expect(report(withTreasures([{ pos: [1, 1], itemId: "no_such_item" }]))).toContain(
+      "no_such_item",
+    );
+  });
+
+  it("맵 안 좌표와 존재하는 아이템이면 통과한다", () => {
+    expect(withTreasures([{ pos: [1, 1], itemId: "iron_sword" }])).toEqual([]);
+  });
+
+  it("보물을 적지 않은 스테이지는 빈 목록으로 읽힌다 (M1 데이터 형식)", () => {
+    const raw = validRawGameData();
+    const { data } = loadGameData(raw);
+
+    expect(data?.stages[0]?.treasures).toEqual([]);
+  });
+});
+
 describe("loadGameData — 아이템 참조 무결성 (AC-01)", () => {
   it("아이템 ID가 중복 정의되면 보고한다", () => {
     const raw = validRawGameData();

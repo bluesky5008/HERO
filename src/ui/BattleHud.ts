@@ -1,6 +1,6 @@
 import type { Side } from "../core/battle/state";
 import type { Outcome } from "../core/battle/turn";
-import type { Stage } from "../core/data/schemas";
+import type { Weather } from "../core/data/schemas";
 
 /**
  * 전투 HUD(DES-06 → FR-18). PixiJS 캔버스 위에 얹는 DOM 오버레이다.
@@ -22,7 +22,7 @@ export interface MenuItem {
 export interface HudView {
   turn: number;
   phase: Side;
-  weather: Stage["weather"];
+  weather: Weather;
   /** 커서 아래 부대. 없으면 정보창을 비운다. */
   unit: {
     officerName: string;
@@ -45,8 +45,9 @@ export interface BattleHud {
   render(view: HudView): void;
 }
 
-/** 날씨는 데이터 파일이 아니라 스키마의 열거값이므로(코드가 정본) 표시 이름만 여기서 붙인다. */
-const WEATHER_LABEL: Record<Stage["weather"], string> = { clear: "맑음", rain: "비" };
+/** 날씨는 데이터 파일이 아니라 스키마의 열거값이므로(코드가 정본) 표시 이름만 여기서 붙인다.
+ * 스테이지가 정한 형태가 아니라 전투 상태의 "지금 날씨"를 그린다 — 동적 날씨는 턴마다 바뀐다. */
+const WEATHER_LABEL: Record<Weather, string> = { clear: "맑음", rain: "비" };
 const SIDE_LABEL: Record<Side, string> = { player: "아군", enemy: "적군" };
 const OUTCOME_LABEL: Record<Outcome, string> = { victory: "승리", defeat: "패배" };
 

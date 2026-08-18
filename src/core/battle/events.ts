@@ -19,4 +19,6 @@ export type BattleEvent =
   | { type: "tacticMissed"; officerId: string; targetId: string }
   | { type: "itemUsed"; officerId: string; itemId: string }
   | { type: "classChanged"; officerId: string; from: string; to: string }
-  | { type: "countered"; attackerId: string; defenderId: string; damage: number };
+  | { type: "countered"; attackerId: string; defenderId: string; damage: number }
+  | { type: "treasureFound"; officerId: string; itemId: string; pos: Pos }
+  | { type: "weatherChanged"; to: "clear" | "rain" };

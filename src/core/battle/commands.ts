@@ -5,7 +5,7 @@ import type { BattleEvent } from "./events";
 import { attackExp, gainExp, grantDefeatExp } from "./experience";
 import { changeMorale } from "./morale";
 import { gridDistance, reachableTiles } from "./movement";
-import { classOf, type BattleContext, type BattleState, type Unit } from "./state";
+import { classOf, posKey, type BattleContext, type BattleState, type Unit } from "./state";
 import { carriedItem, itemRejection, useItem } from "./items";
 import { applyTactic, tacticRejection } from "./tactics";
 
@@ -20,6 +20,7 @@ export type Command =
   | { type: "attack"; officerId: string; targetId: string }
   | { type: "useTactic"; officerId: string; tacticId: string; to: Pos }
   | { type: "useItem"; officerId: string; itemId: string; to?: Pos }
+  | { type: "investigate"; officerId: string }
   | { type: "wait"; officerId: string };
 
 /**
@@ -197,6 +198,32 @@ export function applyCommand(
       const events = useItem(ctx, state, unit, item, cmd.to, rng);
       unit.acted = true;
       return events;
+    }
+
+    case "investigate": {
+      // 보물은 선 자리에서만, 그리고 한 번만 얻는다([상세 스펙 §1.7]).
+      const here = posKey(unit.pos);
+      const treasure = ctx.stage.treasures.find((candidate) => posKey(candidate.pos) === here);
+      if (!treasure || state.treasuresTaken.includes(here)) {
+        throw new BattleCommandError(`[${unit.pos}]에는 조사할 것이 없다`);
+      }
+      if (unit.items.length >= ctx.data.combatConfig.itemSlots) {
+        throw new BattleCommandError(
+          `${unit.officerId}의 소지품이 가득 찼다 (${ctx.data.combatConfig.itemSlots}개)`,
+        );
+      }
+
+      unit.items.push(treasure.itemId);
+      state.treasuresTaken.push(here);
+      unit.acted = true;
+      return [
+        {
+          type: "treasureFound",
+          officerId: unit.officerId,
+          itemId: treasure.itemId,
+          pos: treasure.pos,
+        },
+      ];
     }
 
     case "wait": {
