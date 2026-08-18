@@ -1,5 +1,6 @@
 import type { Rng } from "../rng";
 import type { BattleEvent } from "./events";
+import { regenAmount } from "./items";
 import { changeMorale, rollConfusion } from "./morale";
 import { terrainAt, type BattleContext, type BattleState, type Unit } from "./state";
 
@@ -27,10 +28,19 @@ function recoverOnStronghold(ctx: BattleContext, unit: Unit): BattleEvent[] {
   ];
 }
 
+/** 자연 회복 아이템의 턴 시작 회복([상세 스펙 §1.1] — 턴 시작 ③). */
+function recoverFromItems(ctx: BattleContext, unit: Unit): BattleEvent[] {
+  const healed = Math.min(regenAmount(ctx, unit), unit.hpMax - unit.hp);
+  if (healed <= 0) return [];
+
+  unit.hp += healed;
+  return [{ type: "healed", officerId: unit.officerId, amount: healed }];
+}
+
 /**
  * 차례를 받은 진영의 턴 시작 처리. 순서는 [상세 스펙 §1.1]의
  * ① 자동 저장 → ② 거점 회복 → ③ 자연 회복 아이템 → ④ 상태이상 판정 → ⑤ 턴 이벤트로 고정한다.
- * 단계를 나눠 두므로 뒤 작업(①은 M3, ③은 TASK-26, ⑤는 TASK-29)이 자리만 채우면 된다.
+ * 단계를 나눠 두므로 뒤 작업(①은 M3, ⑤는 TASK-29)이 자리만 채우면 된다.
  * `endPhase` 다음과 전투 시작 직후에 부른다 — 이동·행동 기록이 초기화된 뒤여야 혼란이 그 턴을 소비한다.
  */
 export function beginPhase(ctx: BattleContext, state: BattleState, rng: Rng): BattleEvent[] {
@@ -38,6 +48,7 @@ export function beginPhase(ctx: BattleContext, state: BattleState, rng: Rng): Ba
 
   return [
     ...actors.flatMap((unit) => recoverOnStronghold(ctx, unit)),
+    ...actors.flatMap((unit) => recoverFromItems(ctx, unit)),
     ...actors.flatMap((unit) => rollConfusion(ctx, unit, rng)),
   ];
 }

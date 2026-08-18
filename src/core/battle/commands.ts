@@ -6,6 +6,7 @@ import { attackExp, gainExp, grantDefeatExp } from "./experience";
 import { changeMorale } from "./morale";
 import { gridDistance, reachableTiles } from "./movement";
 import { classOf, type BattleContext, type BattleState, type Unit } from "./state";
+import { carriedItem, itemRejection, useItem } from "./items";
 import { applyTactic, tacticRejection } from "./tactics";
 
 /**
@@ -13,12 +14,12 @@ import { applyTactic, tacticRejection } from "./tactics";
  * 모든 행동을 커맨드로 표현해 로그·리플레이·테스트가 같은 경로를 쓴다([전체 설계 §6.3]).
  * 상태 변경은 이 함수 안에서 완결된다 — 저장은 언제나 커맨드 사이에서만 일어나므로
  * `BattleState`는 항상 직렬화 가능한 일관 상태여야 한다([상세 스펙 §2.2], M3).
- * 아이템 커맨드는 M2 TASK-26에서 이 합집합에 붙는다.
  */
 export type Command =
   | { type: "move"; officerId: string; to: Pos }
   | { type: "attack"; officerId: string; targetId: string }
   | { type: "useTactic"; officerId: string; tacticId: string; to: Pos }
+  | { type: "useItem"; officerId: string; itemId: string; to?: Pos }
   | { type: "wait"; officerId: string };
 
 /**
@@ -144,6 +145,18 @@ export function applyCommand(
       if (rejection) throw new BattleCommandError(rejection);
 
       const events = applyTactic(ctx, state, unit, tactic, cmd.to, rng);
+      unit.acted = true;
+      return events;
+    }
+
+    case "useItem": {
+      const item = carriedItem(ctx, unit, cmd.itemId);
+      if (!item) throw new BattleCommandError(`${unit.officerId}는 '${cmd.itemId}'를 지니고 있지 않다`);
+
+      const rejection = itemRejection(ctx, state, unit, item, cmd.to);
+      if (rejection) throw new BattleCommandError(rejection);
+
+      const events = useItem(ctx, state, unit, item, cmd.to, rng);
       unit.acted = true;
       return events;
     }

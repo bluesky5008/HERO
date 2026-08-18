@@ -16,4 +16,6 @@ export type BattleEvent =
   | { type: "expGained"; officerId: string; amount: number }
   | { type: "leveledUp"; officerId: string; level: number }
   | { type: "tacticUsed"; officerId: string; tacticId: string; to: Pos }
-  | { type: "tacticMissed"; officerId: string; targetId: string };
+  | { type: "tacticMissed"; officerId: string; targetId: string }
+  | { type: "itemUsed"; officerId: string; itemId: string }
+  | { type: "classChanged"; officerId: string; from: string; to: string };

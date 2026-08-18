@@ -65,7 +65,7 @@
     "type": "classUpgrade",
     "value": 0,
     "tacticId": null,
-    "classId": null,
+    "classId": "sword_soldier",
     "price": null,
     "forbiddenFor": []
   },

@@ -59,7 +59,20 @@ export function tacticRejection(
   if (caster.mp < tactic.cost) {
     return `${caster.officerId}의 책략치가 모자란다 (${caster.mp} < ${tactic.cost})`;
   }
+  return tacticTargetRejection(ctx, state, caster, tactic, to);
+}
 
+/**
+ * 대상 자리가 규칙에 맞는가 — 맵 안, 사거리 안, 날씨·지형 게이트 통과.
+ * 시전자 조건(병과·책략치)은 보지 않으므로 소모품 아이템도 이 판정만 받는다([TASK-26](./items.ts)).
+ */
+export function tacticTargetRejection(
+  ctx: BattleContext,
+  state: BattleState,
+  caster: Unit,
+  tactic: Tactic,
+  to: Pos,
+): string | null {
   const [x, y] = to;
   if (x < 0 || y < 0 || x >= ctx.stage.map.width || y >= ctx.stage.map.height) {
     return `[${x}, ${y}]는 맵 밖이다`;
@@ -210,9 +223,25 @@ export function applyTactic(
 ): BattleEvent[] {
   caster.mp -= tactic.cost;
 
-  const events: BattleEvent[] = [
+  return [
     { type: "tacticUsed", officerId: caster.officerId, tacticId: tactic.id, to },
+    ...applyTacticEffects(ctx, state, caster, tactic, to, rng),
   ];
+}
+
+/**
+ * 책략의 효과만 적용한다. 책략치 소비와 사용 이벤트는 부르는 쪽이 정한다 —
+ * 소모품 아이템은 같은 효과를 내면서 책략치를 쓰지 않는다([상세 스펙 §1.6]).
+ */
+export function applyTacticEffects(
+  ctx: BattleContext,
+  state: BattleState,
+  caster: Unit,
+  tactic: Tactic,
+  to: Pos,
+  rng: Rng,
+): BattleEvent[] {
+  const events: BattleEvent[] = [];
 
   // 대상 목록을 먼저 고정한다 — 적용 도중 격파로 `state.units`가 줄어도 남은 대상이 밀리지 않는다.
   const area = areaTiles(tactic, to);

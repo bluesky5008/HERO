@@ -40,7 +40,7 @@ const TERRAIN = [
 
 // 병과별 사용 가능 책략은 [상세 스펙 §1.5]를 따른다 — 보병계=화계+병력회복, 궁병계=수계, 기병=공격 책략 없음, 군악대=사기회복.
 const CLASSES = [
-  { id: "sword_soldier", name: "단병", family: "infantry", movement: 5, attackMod: 8, defenseMod: 10, tactics: ["fire_arrow", "mend"] },
+  { id: "sword_soldier", name: "단병", family: "infantry", movement: 5, attackMod: 8, defenseMod: 10, tactics: ["fire_arrow", "mend"], upgradesTo: "spear_soldier", upgradeLevel: 15 },
   { id: "spear_soldier", name: "장병", family: "infantry", movement: 5, attackMod: 12, defenseMod: 14, movementRules: { forbidden: [], halved: ["forest"] }, attackRange: { min: 1, max: 1, directions: 8 as const }, tactics: ["fire_arrow", "fire_dragon"] },
   { id: "light_cavalry", name: "경기병", family: "cavalry", movement: 7, attackMod: 12, defenseMod: 6, movementRules: { forbidden: ["forest"], halved: [] } },
   { id: "archer", name: "궁병", family: "archer", movement: 5, attackMod: 10, defenseMod: 6, attackRange: { min: 1, max: 2, directions: 4 as const }, tactics: ["flood"] },
@@ -129,8 +129,10 @@ const ITEMS = [
   { id: "swift_horse", name: "준마", type: "mount", value: 2 },
   { id: "herb", name: "약초", type: "regen", value: 100 },
   { id: "fire_scroll", name: "화계 두루마리", type: "consumable", tacticId: "fire_arrow" },
-  { id: "spear_manual", name: "장창", type: "classUpgrade" },
-  { id: "sword_book", name: "검술지침서", type: "classChange", classId: "sword_soldier" },
+  { id: "spear_manual", name: "장창", type: "classUpgrade", classId: "sword_soldier" },
+  { id: "bow_book", name: "궁술지침서", type: "classChange", classId: "archer" },
+  // FR-07 확인용 — 변경·승급 아이템의 장수 제한은 경고만 남고 실제로는 걸리지 않아야 한다.
+  { id: "restricted_book", name: "제한된 지침서", type: "classChange", classId: "archer", forbiddenFor: ["foot"] },
 ].map((item) => ({
   value: 0,
   tacticId: null,
@@ -220,8 +222,10 @@ function gameData(options: BattleFixtureOptions): GameData {
   };
 
   const { data, issues } = loadGameData(raw);
-  if (!data || issues.length > 0) {
-    throw new Error(`전투 픽스처 데이터가 유효하지 않다:\n${formatIssues(issues)}`);
+  // 경고는 데이터를 막지 않는다 — 픽스처는 FR-07 확인용으로 경고 대상 아이템을 일부러 담고 있다.
+  const errors = issues.filter((issue) => issue.severity !== "warning");
+  if (!data || errors.length > 0) {
+    throw new Error(`전투 픽스처 데이터가 유효하지 않다:\n${formatIssues(errors)}`);
   }
   return data;
 }
