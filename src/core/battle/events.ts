@@ -21,4 +21,9 @@ export type BattleEvent =
   | { type: "classChanged"; officerId: string; from: string; to: string }
   | { type: "countered"; attackerId: string; defenderId: string; damage: number }
   | { type: "treasureFound"; officerId: string; itemId: string; pos: Pos }
-  | { type: "weatherChanged"; to: "clear" | "rain" };
+  | { type: "weatherChanged"; to: "clear" | "rain" }
+  | { type: "eventFired"; eventId: string }
+  | { type: "dialogue"; lines: readonly { speaker: string; text: string }[] }
+  | { type: "unitsSpawned"; officerIds: string[] }
+  | { type: "unitRemoved"; officerId: string }
+  | { type: "itemGained"; officerId: string; itemId: string };

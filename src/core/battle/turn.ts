@@ -1,5 +1,6 @@
 import type { Rng } from "../rng";
 import type { BattleEvent } from "./events";
+import { runEvents } from "../campaign/eventRunner";
 import { regenAmount } from "./items";
 import { changeMorale, rollConfusion } from "./morale";
 import { terrainAt, type BattleContext, type BattleState, type Unit } from "./state";
@@ -74,6 +75,8 @@ export function beginPhase(ctx: BattleContext, state: BattleState, rng: Rng): Ba
     ...actors.flatMap((unit) => recoverOnStronghold(ctx, unit)),
     ...actors.flatMap((unit) => recoverFromItems(ctx, unit)),
     ...actors.flatMap((unit) => rollConfusion(ctx, unit, rng)),
+    // ⑤ 턴 이벤트. 턴이 새로 시작할 때(플레이어 페이즈)만 재는 것은 날씨와 같은 이유다.
+    ...(state.phase === "player" ? runEvents(ctx, state, "turnStart", [], rng) : []),
   ];
 }
 
@@ -88,7 +91,10 @@ export function isPhaseComplete(state: BattleState): boolean {
  * 자기 차례가 돌아올 때까지 "행동을 마친" 모습으로 화면에 남아야 한다.
  * 반대로 혼란은 차례를 마친 진영의 것을 지운다(아래 참조).
  */
-export function endPhase(state: BattleState): void {
+export function endPhase(ctx: BattleContext, state: BattleState, rng: Rng): BattleEvent[] {
+  // 턴 경계 이벤트는 턴 카운터가 오르기 전에 재야 "5턴 종료"가 5턴에 발동한다([상세 스펙 §3.4]).
+  const events = state.phase === "enemy" ? runEvents(ctx, state, "turnEnd", [], rng) : [];
+
   // 혼란은 한 턴짜리다([상세 스펙 §1.4]) — 차례를 마친 진영의 혼란을 여기서 푼다.
   // 사기가 여전히 낮으면 다음 턴 시작 판정에서 다시 걸리고, 책략으로 걸린 혼란은 한 턴만 유효하다.
   for (const unit of state.units) {
@@ -103,6 +109,8 @@ export function endPhase(state: BattleState): void {
     unit.moved = false;
     unit.acted = false;
   }
+
+  return events;
 }
 
 /**
@@ -111,6 +119,9 @@ export function endPhase(state: BattleState): void {
  * 승리 연출이 그것을 덮어써서는 안 된다.
  */
 export function outcome(ctx: BattleContext, state: BattleState): Outcome | null {
+  // 이벤트가 정한 승패는 조건 판정보다 앞선다([상세 스펙 §3.3]의 `endBattle`).
+  if (state.forcedOutcome) return state.forcedOutcome;
+
   const survivors = new Set(state.units.map((unit) => unit.officerId));
 
   if (ctx.stage.defeat.officerIds.some((officerId) => !survivors.has(officerId))) return "defeat";

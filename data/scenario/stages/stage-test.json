@@ -424,5 +424,27 @@
       ],
       "itemId": "herb"
     }
+  ],
+  "events": [
+    {
+      "id": "ev-test-open",
+      "scope": "battle",
+      "once": true,
+      "trigger": {
+        "type": "battleStart"
+      },
+      "condition": null,
+      "actions": [
+        {
+          "type": "dialogue",
+          "lines": [
+            {
+              "speaker": "유비",
+              "text": "모두 대오를 지켜라."
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

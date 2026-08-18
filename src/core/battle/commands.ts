@@ -5,6 +5,7 @@ import type { BattleEvent } from "./events";
 import { attackExp, gainExp, grantDefeatExp } from "./experience";
 import { changeMorale } from "./morale";
 import { gridDistance, reachableTiles } from "./movement";
+import { runEvents } from "../campaign/eventRunner";
 import { classOf, posKey, type BattleContext, type BattleState, type Unit } from "./state";
 import { carriedItem, itemRejection, useItem } from "./items";
 import { applyTactic, tacticRejection } from "./tactics";
@@ -111,6 +112,18 @@ function unitOf(state: BattleState, officerId: string): Unit {
  * 규칙 검사를 모두 통과한 뒤에만 상태를 건드리므로, 거부된 커맨드는 상태를 바꾸지 않는다.
  */
 export function applyCommand(
+  ctx: BattleContext,
+  state: BattleState,
+  cmd: Command,
+  rng: Rng,
+): BattleEvent[] {
+  const events = applyOne(ctx, state, cmd, rng);
+  // 트리거 평가는 커맨드가 끝난 뒤 한 번이다([상세 스펙 §3.4]) — 액션 도중에 다시 재지 않는다.
+  return [...events, ...runEvents(ctx, state, "command", events, rng)];
+}
+
+/** 커맨드 하나가 규칙대로 바꾸는 상태. 이벤트 평가는 부르는 쪽이 한다. */
+function applyOne(
   ctx: BattleContext,
   state: BattleState,
   cmd: Command,

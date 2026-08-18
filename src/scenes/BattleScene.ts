@@ -2,6 +2,7 @@ import { Container, Graphics, type Application, type FederatedPointerEvent } fro
 import { classOf, createBattleState, officerOf, type BattleContext } from "../core/battle/state";
 import { beginPhase, endPhase, isPhaseComplete, outcome, type Outcome } from "../core/battle/turn";
 import { runAiPhase } from "../core/battle/ai";
+import { runEvents } from "../core/campaign/eventRunner";
 import type { GameData } from "../core/data/loader";
 import type { Pos, Stage, StageUnit } from "../core/data/schemas";
 import { createRng } from "../core/rng";
@@ -126,7 +127,7 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
 
   /** 페이즈를 넘기고 새 차례의 턴 시작 처리까지 끝낸다([상세 스펙 §1.1]) — 둘은 항상 붙어 있어야 한다. */
   function handOver(): void {
-    endPhase(state);
+    endPhase(ctx, state, rng);
     beginPhase(ctx, state, rng);
   }
 
@@ -239,6 +240,7 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
   }
 
   // 첫 플레이어 페이즈도 턴 시작 처리를 받는다 — `endPhase`를 거치지 않고 시작하는 유일한 차례다.
+  runEvents(ctx, state, "battleStart", [], rng);
   beginPhase(ctx, state, rng);
   afterCommand();
   console.info(

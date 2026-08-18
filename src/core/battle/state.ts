@@ -46,6 +46,15 @@ export interface BattleState {
   weatherTurnsLeft: number;
   /** 이미 가져간 보물의 좌표 키(`"x,y"`). 보물은 1회성이다. */
   treasuresTaken: string[];
+  /** 이미 발동한 `once` 이벤트의 ID([상세 스펙 §3.4]). */
+  firedEvents: string[];
+  /**
+   * 이벤트가 세운 플래그. 캠페인 플래그의 전투 안 사본이며,
+   * 캠페인이 생기는 M3에서 이 자리를 캠페인 상태가 대신한다([상세 스펙 §4.1]).
+   */
+  flags: string[];
+  /** 이벤트가 강제로 정한 승패. 정해지면 조건 판정보다 앞선다([상세 스펙 §3.3]의 `endBattle`). */
+  forcedOutcome: "victory" | "defeat" | null;
 }
 
 /**
@@ -94,6 +103,33 @@ export function mpMaxOf(config: CombatConfig, officer: Officer, level: number): 
 }
 
 export const posKey = ([x, y]: Pos): string => `${x},${y}`;
+
+/**
+ * 배치 하나를 전투 부대로 만든다. 파생치는 언제나 여기서 나온다 —
+ * 배치와 이벤트 증원([eventRunner](../campaign/eventRunner.ts))이 같은 식을 쓰게 하려는 것이다.
+ */
+export function makeUnit(data: GameData, officer: Officer, placement: StageUnit, side: Side): Unit {
+  const hpMax = hpMaxOf(officer, placement.level);
+  const mpMax = mpMaxOf(data.combatConfig, officer, placement.level);
+
+  return {
+    officerId: officer.id,
+    classId: officer.classId,
+    side,
+    level: placement.level,
+    hp: hpMax,
+    hpMax,
+    morale: placement.morale,
+    pos: placement.pos,
+    moved: false,
+    acted: false,
+    confused: false,
+    exp: 0,
+    mp: mpMax,
+    mpMax,
+    items: [],
+  };
+}
 
 /** 전투를 시작할 때의 날씨. 스테이지가 문자열로 적었으면 그 값, 동적이면 지정한 시작 날씨다. */
 export function initialWeather(stage: Stage): Weather {
@@ -162,25 +198,7 @@ export function createBattleState(
         throw new BattleSetupError(`무장 ${officer.id}가 두 번 출진했다`);
       }
 
-      const hpMax = hpMaxOf(officer, placement.level);
-      const mpMax = mpMaxOf(data.combatConfig, officer, placement.level);
-      units.push({
-        officerId: officer.id,
-        classId: officer.classId,
-        side,
-        level: placement.level,
-        hp: hpMax,
-        hpMax,
-        morale: placement.morale,
-        pos: [x, y],
-        moved: false,
-        acted: false,
-        confused: false,
-        exp: 0,
-        mp: mpMax,
-        mpMax,
-        items: [],
-      });
+      units.push(makeUnit(data, officer, { ...placement, pos: [x, y] }, side));
     }
   }
 
@@ -191,5 +209,8 @@ export function createBattleState(
     weather: initialWeather(stage),
     weatherTurnsLeft: 0,
     treasuresTaken: [],
+    firedEvents: [],
+    flags: [],
+    forcedOutcome: null,
   };
 }

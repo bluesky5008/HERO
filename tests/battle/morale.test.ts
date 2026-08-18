@@ -217,10 +217,10 @@ describe("혼란은 한 턴짜리 상태다 ([상세 스펙 §1.4]의 \"그 턴 
     const b = struck();
     beginPhase(b.ctx, b.state, createRng(1));
 
-    endPhase(b.state); // 플레이어 → 적: 차례를 마친 진영의 혼란이 풀린다
+    endPhase(b.ctx, b.state, createRng(1)); // 플레이어 → 적: 차례를 마친 진영의 혼란이 풀린다
     expect(b.unit("foot").confused).toBe(false);
 
-    endPhase(b.state); // 적 → 플레이어
+    endPhase(b.ctx, b.state, createRng(1)); // 적 → 플레이어
     beginPhase(b.ctx, b.state, createRng(1));
     expect(b.unit("foot").acted).toBe(false);
   });
@@ -233,8 +233,8 @@ describe("혼란은 한 턴짜리 상태다 ([상세 스펙 §1.4]의 \"그 턴 
     beginPhase(b.ctx, b.state, createRng(1));
     expect(b.unit("foot").confused).toBe(true);
 
-    endPhase(b.state);
-    endPhase(b.state);
+    endPhase(b.ctx, b.state, createRng(1));
+    endPhase(b.ctx, b.state, createRng(1));
     beginPhase(b.ctx, b.state, createRng(1));
     expect(b.unit("foot").confused).toBe(true);
   });

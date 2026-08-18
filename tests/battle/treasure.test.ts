@@ -62,8 +62,8 @@ describe("보물 조사", () => {
     b.investigate();
 
     // 다음 턴이 와서 행동이 되살아나도 이미 가져간 자리는 비어 있다.
-    endPhase(b.state);
-    endPhase(b.state);
+    endPhase(b.ctx, b.state, createRng(1));
+    endPhase(b.ctx, b.state, createRng(1));
 
     expect(() => b.investigate()).toThrow(BattleCommandError);
     expect(b.unit("foot").items).toEqual(["iron_sword"]);
@@ -109,8 +109,8 @@ describe("날씨 — 고정", () => {
 
     for (let turn = 0; turn < 5; turn += 1) {
       beginPhase(b.ctx, b.state, createRng(1));
-      endPhase(b.state);
-      endPhase(b.state);
+      endPhase(b.ctx, b.state, createRng(1));
+      endPhase(b.ctx, b.state, createRng(1));
     }
 
     expect(b.state.weather).toBe("clear");
@@ -147,8 +147,8 @@ describe("날씨 — 동적", () => {
 
     const nextTurn = () => {
       beginPhase(b.ctx, b.state, createRng(1));
-      endPhase(b.state);
-      endPhase(b.state);
+      endPhase(b.ctx, b.state, createRng(1));
+      endPhase(b.ctx, b.state, createRng(1));
     };
 
     nextTurn(); // 1턴 시작: 비가 내리기 시작한다
@@ -180,8 +180,8 @@ describe("날씨 — 동적", () => {
       for (let turn = 0; turn < 6; turn += 1) {
         beginPhase(b.ctx, b.state, rng);
         seen.push(b.state.weather);
-        endPhase(b.state);
-        endPhase(b.state);
+        endPhase(b.ctx, b.state, createRng(1));
+        endPhase(b.ctx, b.state, createRng(1));
       }
       return seen;
     };

@@ -11,8 +11,8 @@
 ## 요약
 
 - 목적: M2(전투 완성) 사이클의 수행 내용·결정·검증 증거를 남기고, 세션이 끊겨도 다음 세션이 대화 기록 없이 재개할 수 있게 한다.
-- 현재 결론 또는 상태: **구현 진행 중 (8/14)**. 작업 14건(TASK-21~34)과 검증 7건(VER-09~15)을 [PLAN](../../plan.md#m2-사이클-진행-중)에 정의했고, [TASK-21](../../plan.md#task-21-사기혼란과-턴-시작-처리)(사기·혼란과 턴 시작 처리)·[TASK-22](../../plan.md#task-22-경험치레벨업)(경험치·레벨업, 적 성장의 전투 범위 한정 포함)·[TASK-23](../../plan.md#task-23-책략-데이터-계약과-책략치mp)(책략 데이터 계약과 책략치)·[TASK-24](../../plan.md#task-24-책략-실행-커맨드)(책략 실행 커맨드)·[TASK-25](../../plan.md#task-25-아이템-데이터-계약과-장비-효과)(아이템 데이터 계약과 장비 효과)·[TASK-26](../../plan.md#task-26-아이템-사용과-승급계열-전환)(아이템 사용과 승급·계열 전환)·[TASK-27](../../plan.md#task-27-병과-플래그와-반격)(병과 플래그와 반격)·[TASK-28](../../plan.md#task-28-보물군량고-조사와-날씨)(보물·군량고 조사와 날씨)을 완료했다. 자동 게이트 4종이 모두 성공한다(테스트 391건 — M1 기준선 184건 + 신규 207건).
-- 다음 행동: [TASK-29 전투 이벤트 DSL 인터프리터](../../plan.md#task-29-전투-이벤트-dsl-인터프리터)의 선행 테스트 `tests/campaign/eventRunner.test.ts`를 작성해 실패를 확인한 뒤 구현한다.
+- 현재 결론 또는 상태: **구현 진행 중 (9/14)**. 작업 14건(TASK-21~34)과 검증 7건(VER-09~15)을 [PLAN](../../plan.md#m2-사이클-진행-중)에 정의했고, [TASK-21](../../plan.md#task-21-사기혼란과-턴-시작-처리)(사기·혼란과 턴 시작 처리)·[TASK-22](../../plan.md#task-22-경험치레벨업)(경험치·레벨업, 적 성장의 전투 범위 한정 포함)·[TASK-23](../../plan.md#task-23-책략-데이터-계약과-책략치mp)(책략 데이터 계약과 책략치)·[TASK-24](../../plan.md#task-24-책략-실행-커맨드)(책략 실행 커맨드)·[TASK-25](../../plan.md#task-25-아이템-데이터-계약과-장비-효과)(아이템 데이터 계약과 장비 효과)·[TASK-26](../../plan.md#task-26-아이템-사용과-승급계열-전환)(아이템 사용과 승급·계열 전환)·[TASK-27](../../plan.md#task-27-병과-플래그와-반격)(병과 플래그와 반격)·[TASK-28](../../plan.md#task-28-보물군량고-조사와-날씨)(보물·군량고 조사와 날씨)·[TASK-29](../../plan.md#task-29-전투-이벤트-dsl-인터프리터)(전투 이벤트 DSL 인터프리터)를 완료했다. 자동 게이트 4종이 모두 성공한다(테스트 425건 — M1 기준선 184건 + 신규 241건).
+- 다음 행동: [TASK-30 일기토](../../plan.md#task-30-일기토)의 선행 테스트 `tests/battle/duel.test.ts`를 작성해 실패를 확인한 뒤 구현한다.
 
 ## 문서 연결
 
@@ -33,7 +33,7 @@
 ## 현재 상태
 
 - 진행 중인 작업: 없음
-- 마지막 완료 작업: [TASK-28 보물·군량고 조사와 날씨](../../plan.md#task-28-보물군량고-조사와-날씨) (2026-08-18)
+- 마지막 완료 작업: [TASK-29 전투 이벤트 DSL 인터프리터](../../plan.md#task-29-전투-이벤트-dsl-인터프리터) (2026-08-19)
 - 차단 요인: 없음
 
 ## 수행 기록
@@ -320,17 +320,52 @@
 
 - 결과: 전투맵 보물 획득과 날씨가 들어가 [VER-13](../../plan.md#검증-계획)의 남은 대상 중 보물이 채워졌다(이벤트는 TASK-29). 조사 행동의 화면 조작은 [TASK-32](../../plan.md#task-32-전투-ui-확장)가 잇는다.
 
+### 2026-08-19 — TASK-29 전투 이벤트 DSL 인터프리터
+
+- 수행 내용: [TASK-29](../../plan.md#task-29-전투-이벤트-dsl-인터프리터)를 TDD 사이클로 구현했다. 선행 테스트 `tests/campaign/eventRunner.test.ts`(신규 34건)를 먼저 작성해 실패(Red)를 확인한 뒤 구현했다. 트리거 9종·액션 11종·`once` 기록·조건·스코프가 동작하고, 평가 지점이 커맨드 직후와 턴 경계에 배선됐다. **VER-15 충족.**
+- 변경 파일:
+  - 신규 — `src/core/campaign/eventRunner.ts`, `tests/campaign/eventRunner.test.ts`
+  - 데이터 계약 — `schemas.ts`(`EventTriggerSchema`·`EventActionSchema`·`StageEventSchema`·`Stage.events`·`SideSchema`)
+  - 코어 — `state.ts`(`firedEvents`·`flags`·`forcedOutcome`, `makeUnit` 추출), `turn.ts`(`endPhase` 시그니처 확장·`turnStart`/`turnEnd` 배선·`forcedOutcome` 우선), `commands.ts`(`applyOne` 분리 후 커맨드 직후 평가), `events.ts`(연출 이벤트 5종)
+  - 화면 — `src/scenes/BattleScene.ts`(`battleStart` 배선)
+  - 데이터 — `data/scenario/stages/stage-test.json`(이벤트 샘플)
+  - 테스트 — `tests/battle/{fixtures,turn,morale,tactics,items,treasure}.test.ts`의 `endPhase` 호출부
+- 발견 사항:
+  - **`endPhase`의 시그니처를 넓혀야 했다.** `turnEnd`는 턴이 끝나는 자리에서 재야 하는데 `endPhase(state)`에는 `ctx`도 `rng`도 없었다. [TASK-21이 `endPhase`를 그대로 두기로 한 판단](#2026-08-18--task-21-사기혼란과-턴-시작-처리)은 당시 필요가 없었기 때문이고, 이제 필요가 생겨 `endPhase(ctx, state, rng): BattleEvent[]`로 넓혔다. 호출부 6파일이 함께 움직였지만 전부 기계적 변경이며 M1 테스트의 의미는 그대로다.
+  - **`unitDestroyed`의 가해자를 별도 필드 없이 얻을 수 있었다.** `defeated` 이벤트에 `by`를 더하면 M1·M2 테스트의 단언이 줄줄이 깨진다. 대신 이벤트 목록의 순서가 곧 인과라는 점을 이용해 — `defeated` 앞쪽에서 같은 부대를 때린 가장 가까운 `attacked`/`countered`를 찾아 — 짝을 지었다. 책략의 `cross5`처럼 여러 격파가 섞여도 각 `defeated`는 자기 공격 바로 뒤에 오므로 정확하다.
+  - **재진입 테스트가 처음에는 엉뚱한 성질을 재고 있었다.** "앞 이벤트가 세운 플래그를 뒤 이벤트가 본다"를 재진입으로 착각했는데, 그것은 [상세 스펙 §3.4](../../../yeonggeoljeon-remake-spec-detail.md)가 정한 "배열 순서대로 실행"의 당연한 결과다. 실제로 막아야 하는 것은 **한 번의 평가가 스스로를 다시 부르는 것**이므로, 뒤 이벤트가 세운 플래그를 앞 이벤트가 이번 바퀴에는 보지 못한다는 쪽으로 고쳐 단언했다. 두 성질을 각각 테스트로 남겼다.
+- 결정과 이유:
+  - **평가를 한 바퀴로 끝낸다.** [TASK-29의 위험](../../plan.md#task-29-전투-이벤트-dsl-인터프리터)이 재진입이었다. `runEvents`는 스테이지 배열을 한 번 훑고 끝나며 액션이 상태를 바꿔도 스스로를 다시 부르지 않는다. 조건이 나중에 성립한 이벤트는 다음 평가 시점(커맨드 직후 또는 턴 경계)에 발동한다.
+  - **`once`는 발동 즉시 기록한다.** 액션이 도중에 상태를 바꾸더라도 같은 바퀴에서 두 번 돌 수 없게 한다([상세 스펙 §3.4]).
+  - **상태 기반 트리거는 시점을 가리지 않는다.** `unitAdjacent`·`unitHpBelow`·`unitReaches`·`unitsRemaining`은 지금 상태만 보므로 모든 평가 시점에서 재고, `battleStart`·`turnStart`·`turnEnd`는 자기 시점에서만, `unitAttacks`·`unitDestroyed`는 방금 일어난 일에서만 성립한다. 스펙이 트리거를 두 부류로 나누지 않았지만 각각의 정의가 그렇게 갈린다.
+  - **`applyCommand`를 판정부와 이벤트 평가로 나눴다.** `applyOne`이 규칙대로 상태를 바꾸고, `applyCommand`가 그 결과를 이벤트 평가에 넘긴다. 커맨드마다 평가를 잊지 않게 하면서 규칙 코드에는 이벤트가 섞이지 않는다.
+  - **`forcedOutcome`을 `outcome`의 맨 앞에 두었다.** `endBattle`은 조건 판정 밖의 종료이므로([상세 스펙 §3.3]) 승패 조건보다 앞서야 한다.
+  - **M2 범위 밖 액션은 스키마에도 넣지 않았다.** `choice`·`giveGold`·`joinOfficer`·`gameOver`는 캠페인(M3), `duel`은 [TASK-30](../../plan.md#task-30-일기토)이 더한다. 쓰지 않을 계약을 미리 넓히지 않는다(YAGNI).
+  - **플래그를 `BattleState`에 두었다.** 캠페인 플래그는 [상세 스펙 §4.1](../../../yeonggeoljeon-remake-spec-detail.md)이 캠페인 상태의 것으로 규정하지만 M2에는 캠페인이 없다. 전투 안 사본으로 두고 M3이 이 자리를 대신하도록 주석에 남겼다.
+- 실행한 검증:
+
+  | 검증 | 명령 | 결과 | 증거 |
+  |---|---|---|---|
+  | 선행 테스트 실패 확인 (Red) | `npx vitest run tests/campaign/eventRunner.test.ts` | 의도한 실패 | `eventRunner.ts` 미존재 |
+  | **VER-15**(FR-09·DES-13) | `npm test` | 성공 | 트리거 9종이 각각 자기 조건에서만 발동 / `once` 재발동 방지 / 동시 발동 배열 순서 / 조건 플래그 양방향 / `camp` 스코프 제외 / 액션 11종이 상태에 반영 / `endBattle`이 승패를 덮어쓴다 |
+  | 전체 테스트 | `npm test` | 성공 | 16파일 425건 통과 (TASK-28 시점 391건 + 신규 34건) |
+  | M1 데이터 형식 유지 | `npm test` | 성공 | 이벤트가 없는 스테이지는 빈 목록으로 읽히고 아무 일도 하지 않는다 |
+  | 데이터 검증 | `npm run validate` | 성공 | 알 수 없는 트리거 유형을 넣으면 `exit=1`, 원본 복원 후 통과 |
+  | 타입 검사·빌드 | `npx tsc --noEmit` / `npm run build` | 성공 | 출력 없음 / `✓ built in 1.04s` |
+
+- 결과: 이벤트 DSL이 전투 안에서 완결됐다. [TASK-30](../../plan.md#task-30-일기토)의 일기토가 `duel` 액션으로 이 인터프리터에 붙고, [TASK-31](../../plan.md#task-31-2단계-적-ai)의 `setAiProfile`도 액션으로 더해진다. 연출 재생(대화창·컷인)은 [TASK-32](../../plan.md#task-32-전투-ui-확장)가 이벤트 큐를 소비해 만든다.
+
 ## 검증 범위와 환경
 
-- 대상 기준선 또는 구현: [REQ-ygj-remake](../../requirements.md) v1 / [DESIGN-ygj-remake](../../design.md) v1의 M2 범위. TASK-21~28 완료, TASK-29~34 미착수.
+- 대상 기준선 또는 구현: [REQ-ygj-remake](../../requirements.md) v1 / [DESIGN-ygj-remake](../../design.md) v1의 M2 범위. TASK-21~29 완료, TASK-30~34 미착수.
 - 실행 환경: **macOS(Darwin 25.4.0, 맥미니), Node.js v26.7.0 / npm 11.19.0**(2026-08-18 이관). 계획 수립까지는 Windows 11 / Node.js v24.19.0 / npm 11.17.0이었다. 화면 확인은 `npm run dev` + Chrome 헤드리스 CDP 하네스([M1 재개 지점](../20260817-m1-battle-prototype/work-log.md#재개-지점) 7번).
 - 제외 항목: 화면 확인(연출·상태이상 표시)은 표시 요소를 만드는 [TASK-32](../../plan.md#task-32-전투-ui-확장) 이후 [VER-09](../../plan.md#검증-계획)에서 한다. TASK-21은 판정 가능한 규칙을 전부 단위 테스트로 고정했다([RISK-M0-01](../../plan.md#위험)의 완화 방식과 같다).
 
 ## 결과 요약
 
-- 성공: TASK-21~28의 선행 테스트(각 26건·19건·21건·48건·23건·26건·12건·19건, Red→Green)와 자동 게이트 4종 — `npm test` 391건, `npx tsc --noEmit`, `npm run validate`, `npm run build`. M1 기준선 184건이 한 건도 깨지지 않았다(단언 4건은 규칙 확장에 맞춰 의도를 유지한 채 고쳤다 — 각 [TASK-21](#2026-08-18--task-21-사기혼란과-턴-시작-처리)·[TASK-22](#2026-08-18--task-22-경험치레벨업) 수행 기록).
+- 성공: TASK-21~29의 선행 테스트(각 26건·19건·21건·48건·23건·26건·12건·19건·34건, Red→Green)와 자동 게이트 4종 — `npm test` 425건, `npx tsc --noEmit`, `npm run validate`, `npm run build`. M1 기준선 184건이 한 건도 깨지지 않았다(단언 4건은 규칙 확장에 맞춰 의도를 유지한 채 고쳤다 — 각 [TASK-21](#2026-08-18--task-21-사기혼란과-턴-시작-처리)·[TASK-22](#2026-08-18--task-22-경험치레벨업) 수행 기록).
 - 실패: 없음
-- 미수행: VER-09·11·12·14·15. **VER-10**(AC-04)은 [TASK-25](#2026-08-18--task-25-아이템-데이터-계약과-장비-효과)에서 충족했다 — 상성 3×3 × 지형 × 아이템 보정이 단위 테스트로 고정되어 AC-04가 완결됐다. **VER-13**(AC-01)은 `tactics.json`·`items.json` 참조에 대해 부분 충족했고, 남은 대상(보물·이벤트)은 TASK-28·29에서 채운다.
+- 미수행: VER-09·11·12·14. **VER-15**(FR-09·DES-13)는 [TASK-29](#2026-08-19--task-29-전투-이벤트-dsl-인터프리터)에서 충족했다. **VER-10**(AC-04)은 [TASK-25](#2026-08-18--task-25-아이템-데이터-계약과-장비-효과)에서 충족했다 — 상성 3×3 × 지형 × 아이템 보정이 단위 테스트로 고정되어 AC-04가 완결됐다. **VER-13**(AC-01)은 `tactics.json`·`items.json` 참조에 대해 부분 충족했고, 남은 대상(보물·이벤트)은 TASK-28·29에서 채운다.
 
 ## 인수 조건별 결과
 
@@ -372,7 +407,7 @@
 
 ## 미완료 항목
 
-- TASK-29~34(6건), VER-09·11·12·14·15(VER-10 충족, VER-12·13은 부분 충족).
+- TASK-30~34(5건), VER-09·11·12·14(VER-10·15 충족, VER-12·13은 부분 충족).
 - **미확정 상수**(전부 [상세 스펙](../../../yeonggeoljeon-remake-spec-detail.md)의 `[검증]` 항목이라 값을 지어내지 않고 [TASK-33](../../plan.md#task-33-m2-검증-스테이지와-원작-대조-튜닝)의 원작 대조 대상으로 남긴다 — [RISK-M2-01](../../plan.md#위험)):
   - `confusion.chance` 0.5 — §1.4가 "확률 판정"이라고만 적고 값을 주지 않는다.
   - `exp.divisor` 10 — §1.6이 `expDivisor`를 `[검증]`으로 남겼다.
@@ -384,9 +419,9 @@
 
 ## 재개 지점
 
-- 다음 작업: [TASK-29 전투 이벤트 DSL 인터프리터](../../plan.md#task-29-전투-이벤트-dsl-인터프리터)
+- 다음 작업: [TASK-30 일기토](../../plan.md#task-30-일기토)
 - 먼저 확인할 사항:
-  1. 착수 시 TASK-29의 상태를 `in-progress`로 바꾸고 같은 변경에서 [계획 트리](../../plan.md#계획-트리)를 재생성한다.
+  1. 착수 시 TASK-30의 상태를 `in-progress`로 바꾸고 같은 변경에서 [계획 트리](../../plan.md#계획-트리)를 재생성한다.
   2. 턴 시작 처리 순서는 [상세 스펙 §1.1](../../../yeonggeoljeon-remake-spec-detail.md)의 ① 자동 저장(M3) → ② 거점 회복 → ③ 자연 회복 아이템 → ④ 상태이상 판정 → ⑤ 턴 이벤트로 이미 고정되어 있다(`src/core/battle/turn.ts`의 `beginPhase`). ③은 TASK-26, ⑤는 TASK-29가 채운다.
   3. **TASK-23·24가 세운 책략 계약** — 지형·날씨 게이트는 코드 분기가 아니라 `tactics.json`의 필드가 표현하고, 판정은 `tacticRejection`(사용 가능 여부)과 `applyTactic`(적용)으로 나뉜다. 화면과 AI는 같은 `tacticRejection`을 불러 후보를 걸러야 한다. 혼란은 한 턴짜리 상태이며 `endPhase`가 차례를 마친 진영의 것을 푼다.
   4. **TASK-21·22가 확정한 계약** — 사기를 바꾸는 모든 경로는 `changeMorale(ctx, unit, delta)`을, 경험치를 주는 모든 경로는 `gainExp(ctx, unit, amount)`을 지난다(혼란 해제와 레벨업이 각각 그 안에 있다). 혼란 부대는 `moved`·`acted`가 함께 서서 그 턴을 소비한다. 새 전투 상수는 `CombatConfigSchema`에 넣고 `data/config/combat-config.json`·`tests/data/fixtures.ts`의 `validCombatConfig` 두 곳을 함께 갱신한다(게임 설정은 `game-config.json`·`validConfig`).
@@ -397,12 +432,12 @@
 
 ## 인계
 
-- 다음 단계 또는 워크플로우: wf-implement §3.3(구현) — TASK-29부터 계획 순서대로 TDD 사이클로 진행한다.
-- 시작 조건: 충족 — 기준선 v1 승인, M0·M1 완료, TASK-21~28 완료, 자동 게이트 4종 통과 상태.
+- 다음 단계 또는 워크플로우: wf-implement §3.3(구현) — TASK-30부터 계획 순서대로 TDD 사이클로 진행한다.
+- 시작 조건: 충족 — 기준선 v1 승인, M0·M1 완료, TASK-21~29 완료, 자동 게이트 4종 통과 상태.
 - 입력 문서와 기준선: [PLAN-ygj-remake](../../plan.md), [REQ-ygj-remake](../../requirements.md) v1, [DESIGN-ygj-remake](../../design.md) v1, [상세 스펙](../../../yeonggeoljeon-remake-spec-detail.md), [결정 등록부](../../decisions.md)
-- 완료된 항목: M2 계획 수립(TASK-21~34, VER-09~15, 계획 트리 재생성), **TASK-21 사기·혼란과 턴 시작 처리**, **TASK-22 경험치·레벨업**, **TASK-23 책략 데이터 계약과 책략치(MP)**, **TASK-24 책략 실행 커맨드**, **TASK-25 아이템 데이터 계약과 장비 효과**, **TASK-26 아이템 사용과 승급·계열 전환**, **TASK-27 병과 플래그와 반격**, **TASK-28 보물·군량고 조사와 날씨**
-- 미완료 항목: TASK-29~34, VER-09·11·12·14·15(VER-10 충족, VER-12·13은 부분 충족)
+- 완료된 항목: M2 계획 수립(TASK-21~34, VER-09~15, 계획 트리 재생성), **TASK-21 사기·혼란과 턴 시작 처리**, **TASK-22 경험치·레벨업**, **TASK-23 책략 데이터 계약과 책략치(MP)**, **TASK-24 책략 실행 커맨드**, **TASK-25 아이템 데이터 계약과 장비 효과**, **TASK-26 아이템 사용과 승급·계열 전환**, **TASK-27 병과 플래그와 반격**, **TASK-28 보물·군량고 조사와 날씨**, **TASK-29 전투 이벤트 DSL 인터프리터**
+- 미완료 항목: TASK-30~34, VER-09·11·12·14(VER-10 충족, VER-12·13은 부분 충족)
 - 차단 요인: 없음
-- 다음 행동: TASK-29의 선행 테스트 `tests/campaign/eventRunner.test.ts`(트리거 9종·`once` 재발동 방지·동시 발동 순서·액션 적용)를 작성해 의도한 이유로 실패하는지 확인한 뒤 최소 구현으로 통과시킨다.
-- 미커밋 변경: 없음 — `95c3569`(TASK-21·22), `0d19b76`(TASK-23), `9e0d79b`(적 성장 범위 한정), `253cf1b`(TASK-24), `e4d2091`(TASK-25), `95a1c60`(TASK-26), `bc1fc69`(TASK-27), TASK-28 커밋까지 `origin/main`에 push했다.
-- 재개 프롬프트: 작업 20260818-m2-battle-complete의 TASK-28까지 끝났다. docs/plan.md의 M2 사이클과 이 기록의 재개 지점을 읽고 TASK-29부터 구현하라.
+- 다음 행동: TASK-30의 선행 테스트 `tests/battle/duel.test.ts`(고정 승패·`judge` 판정·승패 효과)를 작성해 의도한 이유로 실패하는지 확인한 뒤 최소 구현으로 통과시킨다.
+- 미커밋 변경: 없음 — `95c3569`(TASK-21·22), `0d19b76`(TASK-23), `9e0d79b`(적 성장 범위 한정), `253cf1b`(TASK-24), `e4d2091`(TASK-25), `95a1c60`(TASK-26), `bc1fc69`(TASK-27), `58ed355`(TASK-28), TASK-29 커밋까지 `origin/main`에 push했다.
+- 재개 프롬프트: 작업 20260818-m2-battle-complete의 TASK-29까지 끝났다. docs/plan.md의 M2 사이클과 이 기록의 재개 지점을 읽고 TASK-30부터 구현하라.

@@ -192,6 +192,8 @@ export interface BattleFixtureOptions {
   /** 무장 능력치를 테스트마다 바꾼다(무력·통솔 대조 등). */
   officers?: Partial<Record<string, { war?: number; int?: number; ldr?: number }>>;
   weather?: Stage["weather"];
+  /** 스테이지 이벤트([상세 스펙 §3]) */
+  events?: Stage["events"];
   /** 맵에 묻을 보물([상세 스펙 §1.7]) */
   treasures?: Stage["treasures"];
   /** 전투 상수 일부만 바꾼다. 난수 폭을 1~1로 고정하면 공식만 남는다. */
@@ -241,7 +243,12 @@ function gameData(options: BattleFixtureOptions): GameData {
   return data;
 }
 
-function makeStage(rows: string[], weather: Stage["weather"], treasures: Stage["treasures"]): Stage {
+function makeStage(
+  rows: string[],
+  weather: Stage["weather"],
+  treasures: Stage["treasures"],
+  events: Stage["events"],
+): Stage {
   const tiles = rows.map((row) =>
     [...row].map((char) => TILE_CHARS[char] ?? `알 수 없는 타일 문자 '${char}'`),
   );
@@ -253,6 +260,7 @@ function makeStage(rows: string[], weather: Stage["weather"], treasures: Stage["
     deployment: { maxUnits: 1, zone: [[0, 0]] },
     enemies: [{ officerId: "foot", level: 1, morale: 100, pos: [0, 0] }],
     treasures,
+    events,
     victory: { type: "annihilateEnemies" },
     defeat: { type: "officerLost", officerIds: ["foot"] },
   };
@@ -268,7 +276,7 @@ export function makeBattle(
   options: BattleFixtureOptions = {},
 ): { ctx: BattleContext; state: BattleState } {
   const data = gameData(options);
-  const stage = makeStage(rows, options.weather ?? "clear", options.treasures ?? []);
+  const stage = makeStage(rows, options.weather ?? "clear", options.treasures ?? [], options.events ?? []);
 
   const units: Unit[] = specs.map((spec) => {
     const officer = data.officers.find((candidate) => candidate.id === spec.officerId);
@@ -305,6 +313,9 @@ export function makeBattle(
       weather: initialWeather(stage),
       weatherTurnsLeft: 0,
       treasuresTaken: [],
+      firedEvents: [],
+      flags: [],
+      forcedOutcome: null,
     },
   };
 }

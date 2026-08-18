@@ -281,7 +281,7 @@ describe("효과별 적용 ([상세 스펙 §1.5])", () => {
     const b = duel([1, 1], { officers: { mage: { int: 100 }, foot2: { int: 1 } } });
 
     b.cast("bewilder", [1, 1], 3);
-    endPhase(b.state); // 플레이어 → 적
+    endPhase(b.ctx, b.state, createRng(1)); // 플레이어 → 적
     beginPhase(b.ctx, b.state, createRng(1));
 
     expect(b.unit("foot2").acted).toBe(true);

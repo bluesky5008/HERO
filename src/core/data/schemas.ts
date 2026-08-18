@@ -325,6 +325,92 @@ export type RosterEntry = z.infer<typeof RosterEntrySchema>;
 export const StageUnitSchema = RosterEntrySchema.extend({ pos: PosSchema });
 export type StageUnit = z.infer<typeof StageUnitSchema>;
 
+
+export const SideSchema = z.enum(["player", "enemy"]);
+
+/** 값을 적지 않으면 `null`인 양의 정수. 트리거 파라미터처럼 "있으면 쓴다"는 필드에 쓴다. */
+const optionalTurn = z.number().int().positive().nullable().default(null);
+const optionalId = z.string().min(1).nullable().default(null);
+
+/**
+ * 이벤트 트리거([상세 스펙 §3.2]).
+ * `battleStart`·`turnStart`·`turnEnd`는 시점이 오면 재고, 나머지는 상태나 방금 일어난 일을 본다.
+ * `stageEnter`·`stageClear`는 전투 밖(`camp` 스코프) 트리거라 M3에서 더한다.
+ */
+export const EventTriggerSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("battleStart") }),
+  z.object({ type: z.literal("turnStart"), turn: optionalTurn, fromTurn: optionalTurn }),
+  z.object({ type: z.literal("turnEnd"), turn: optionalTurn, fromTurn: optionalTurn }),
+  /** `target`을 적지 않으면 누구를 쳤든 발동한다. */
+  z.object({ type: z.literal("unitAttacks"), attacker: z.string().min(1), target: optionalId }),
+  z.object({ type: z.literal("unitAdjacent"), unit: z.string().min(1), target: z.string().min(1) }),
+  z.object({
+    type: z.literal("unitHpBelow"),
+    unit: z.string().min(1),
+    /** 병력 상한 대비 비율. 0.3이면 30% 미만일 때 발동한다. */
+    ratio: z.number().min(0).max(1),
+  }),
+  z.object({ type: z.literal("unitDestroyed"), unit: z.string().min(1), by: optionalId }),
+  z.object({
+    type: z.literal("unitReaches"),
+    unit: z.string().min(1),
+    /** `[x1, y1, x2, y2]` 사각 영역(양 끝 포함) */
+    area: z.tuple([
+      z.number().int().nonnegative(),
+      z.number().int().nonnegative(),
+      z.number().int().nonnegative(),
+      z.number().int().nonnegative(),
+    ]),
+  }),
+  /** 그 진영의 남은 부대가 `count` 이하일 때 */
+  z.object({ type: z.literal("unitsRemaining"), side: SideSchema, count: z.number().int().nonnegative() }),
+]);
+export type EventTrigger = z.infer<typeof EventTriggerSchema>;
+
+/**
+ * 이벤트 액션([상세 스펙 §3.3]). M2는 전투 안에서 끝나는 것만 구현한다 —
+ * `choice`·`giveGold`·`joinOfficer`·`gameOver`는 캠페인(M3), `duel`은 M2 TASK-30이 더한다.
+ */
+export const EventActionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("dialogue"),
+    lines: z.array(z.object({ speaker: z.string().min(1), text: z.string().min(1) })).min(1),
+  }),
+  z.object({ type: z.literal("spawnUnits"), side: SideSchema, units: z.array(StageUnitSchema).min(1) }),
+  z.object({ type: z.literal("removeUnit"), unit: z.string().min(1) }),
+  z.object({ type: z.literal("moveUnit"), unit: z.string().min(1), pos: PosSchema }),
+  z.object({ type: z.literal("setFlag"), flag: z.string().min(1) }),
+  z.object({ type: z.literal("clearFlag"), flag: z.string().min(1) }),
+  z.object({ type: z.literal("giveItem"), unit: z.string().min(1), itemId: z.string().min(1) }),
+  z.object({ type: z.literal("giveExp"), unit: z.string().min(1), amount: z.number().int().positive() }),
+  z.object({ type: z.literal("setWeather"), weather: WeatherSchema }),
+  /** `unit`을 적으면 그 부대만, `side`를 적으면 그 진영 전체의 사기를 옮긴다. */
+  z.object({
+    type: z.literal("changeMorale"),
+    unit: optionalId,
+    side: SideSchema.nullable().default(null),
+    delta: z.number().int(),
+  }),
+  z.object({ type: z.literal("endBattle"), result: z.enum(["victory", "defeat"]) }),
+]);
+export type EventAction = z.infer<typeof EventActionSchema>;
+
+/** 스테이지 이벤트 하나([상세 스펙 §3.1]). */
+export const StageEventSchema = z.object({
+  id: z.string().min(1),
+  /** `camp`은 전투 밖에서 도는 이벤트라 전투 중에는 평가하지 않는다(M3). */
+  scope: z.enum(["battle", "camp"]).default("battle"),
+  once: z.boolean().default(true),
+  trigger: EventTriggerSchema,
+  /** 플래그 조건. 맞지 않으면 트리거가 성립해도 액션을 실행하지 않는다. */
+  condition: z
+    .object({ flag: z.string().min(1), isSet: z.boolean().default(true) })
+    .nullable()
+    .default(null),
+  actions: z.array(EventActionSchema).min(1),
+});
+export type StageEvent = z.infer<typeof StageEventSchema>;
+
 /** M1은 적 전멸 승리와 지정 무장 격파 패배만 다룬다. 도달·생존 조건은 M2에서 유형을 늘린다. */
 const VictoryConditionSchema = z.object({ type: z.literal("annihilateEnemies") });
 const DefeatConditionSchema = z.object({
@@ -376,6 +462,8 @@ export const StageSchema = z.object({
   enemies: z.array(StageUnitSchema).min(1),
   /** 맵에 묻힌 보물·군량고. 조사로 한 번만 얻는다([상세 스펙 §1.7]). */
   treasures: z.array(z.object({ pos: PosSchema, itemId: z.string().min(1) })).default([]),
+  /** 스테이지 이벤트. 동시에 성립하면 이 배열 순서대로 실행한다([상세 스펙 §3.4]). */
+  events: z.array(StageEventSchema).default([]),
   victory: VictoryConditionSchema,
   defeat: DefeatConditionSchema,
 });

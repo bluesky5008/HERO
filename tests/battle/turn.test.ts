@@ -28,44 +28,44 @@ const drop = (state: BattleState, officerId: string): void => {
 
 describe("endPhase", () => {
   it("플레이어 페이즈가 끝나면 적 페이즈가 되고 턴은 그대로다", () => {
-    const { state } = skirmish();
-    endPhase(state);
+    const { ctx, state } = skirmish();
+    endPhase(ctx, state, createRng(1));
 
     expect(state.phase).toBe("enemy");
     expect(state.turn).toBe(1);
   });
 
   it("적 페이즈가 끝나면 플레이어 페이즈로 돌아오고 턴이 1 오른다", () => {
-    const { state } = skirmish();
-    endPhase(state);
-    endPhase(state);
+    const { ctx, state } = skirmish();
+    endPhase(ctx, state, createRng(1));
+    endPhase(ctx, state, createRng(1));
 
     expect(state.phase).toBe("player");
     expect(state.turn).toBe(2);
   });
 
   it("새 페이즈를 맞은 진영의 이동·행동 기록을 지운다", () => {
-    const { state } = skirmish();
+    const { ctx, state } = skirmish();
     const enemy = state.units[1]!;
     enemy.moved = true;
     enemy.acted = true;
 
-    endPhase(state);
+    endPhase(ctx, state, createRng(1));
 
     expect(enemy.moved).toBe(false);
     expect(enemy.acted).toBe(false);
   });
 
   it("행동을 마친 진영의 기록은 자기 차례가 돌아올 때까지 남는다", () => {
-    const { state } = skirmish();
+    const { ctx, state } = skirmish();
     const player = state.units[0]!;
     player.moved = true;
     player.acted = true;
 
-    endPhase(state); // 적 페이즈 — 플레이어 부대는 아직 행동을 마친 상태로 보여야 한다
+    endPhase(ctx, state, createRng(1)); // 적 페이즈 — 플레이어 부대는 아직 행동을 마친 상태로 보여야 한다
     expect(player.acted).toBe(true);
 
-    endPhase(state); // 다시 플레이어 페이즈
+    endPhase(ctx, state, createRng(1)); // 다시 플레이어 페이즈
     expect(player.moved).toBe(false);
     expect(player.acted).toBe(false);
   });
@@ -122,18 +122,18 @@ describe("isPhaseComplete", () => {
   });
 
   it("상대 진영의 행동 여부는 보지 않는다", () => {
-    const { state } = skirmish();
+    const { ctx, state } = skirmish();
     state.units[0]!.acted = true; // 플레이어만 행동을 마쳤다
 
     expect(isPhaseComplete(state)).toBe(true);
-    endPhase(state);
+    endPhase(ctx, state, createRng(1));
     expect(isPhaseComplete(state)).toBe(false);
   });
 
   it("현재 페이즈 진영에 부대가 없으면 참이다", () => {
-    const { state } = skirmish();
+    const { ctx, state } = skirmish();
     drop(state, "foot2");
-    endPhase(state);
+    endPhase(ctx, state, createRng(1));
 
     expect(isPhaseComplete(state)).toBe(true);
   });
