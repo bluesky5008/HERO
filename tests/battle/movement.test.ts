@@ -140,3 +140,48 @@ describe("이동 아이템 (mount)", () => {
     expect(tiles.every((key) => key.endsWith(",2"))).toBe(true);
   });
 });
+
+describe("병과 플래그 ([상세 스펙 §1.2])", () => {
+  /** 가운데 한 줄만 평지인 통로. 산이 위아래를 막는다. */
+  const MOUNTAINS = ["^^^^^", "^^^^^", ".....", "^^^^^", "^^^^^"];
+
+  it("mountainMove는 지형표가 막은 칸도 지나게 한다", () => {
+    const blocked = reachable(MOUNTAINS, [{ officerId: "foot", side: "player", pos: [2, 2] }]);
+    const climber = reachable(MOUNTAINS, [{ officerId: "bandit1", side: "player", pos: [2, 2] }]);
+
+    expect(blocked.every((key) => key.endsWith(",2"))).toBe(true);
+    expect(climber).toContain("2,0");
+  });
+
+  it("mountainMove가 있어도 병과가 금지한 지형은 막힌다", () => {
+    // 적병은 강을 건너지 못한다(movementRules.forbidden) — 지형표보다 병과 규칙이 우선한다.
+    const river = ["#####", "#####", ".....", "#####", "#####"];
+    const tiles = reachable(river, [{ officerId: "bandit1", side: "player", pos: [2, 2] }]);
+
+    expect(tiles.every((key) => key.endsWith(",2"))).toBe(true);
+  });
+
+  it("noTerrainPenalty는 지형 코스트를 1로 만든다", () => {
+    // 척후병은 숲 코스트가 2배(halved 규칙)지만 플래그가 그것을 무시한다.
+    const forest = Array.from({ length: 9 }, () => "fffffffff");
+    const scout = reachable(forest, [{ officerId: "scout1", side: "player", pos: [4, 4] }]);
+    const band = reachable(forest, [{ officerId: "band", side: "player", pos: [4, 4] }]);
+
+    // 둘 다 이동력 4다. 코스트가 1이면 맨해튼 4까지, 숲 코스트 2면 2칸까지 간다.
+    expect(scout).toContain("4,0");
+    expect(band).not.toContain("4,0");
+    expect(band).toContain("4,2");
+  });
+
+  it("플래그가 없는 병과의 이동은 M1 그대로다", () => {
+    const plain = reachable(PLAIN_7, [{ officerId: "foot", side: "player", pos: [3, 3] }]);
+
+    const expected: string[] = [];
+    for (let y = 0; y < 7; y += 1) {
+      for (let x = 0; x < 7; x += 1) {
+        if (Math.abs(x - 3) + Math.abs(y - 3) <= 5) expected.push(`${x},${y}`);
+      }
+    }
+    expect(plain).toEqual(expected.sort());
+  });
+});

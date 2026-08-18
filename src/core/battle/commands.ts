@@ -63,6 +63,42 @@ export function attackableTiles(ctx: BattleContext, unit: Unit, from: Pos = unit
   return tiles;
 }
 
+/**
+ * 피격 직후의 반격([상세 스펙 §1.1]). 기본은 반격 없음이고 `counterAttack` 플래그를 가진 병과만,
+ * 상대가 자기 사거리 안에 있을 때, 한 번 되친다.
+ *
+ * 공격 한 번이 데미지·격파 판정을 두 번 낳는 지점이라 순서를 여기 한 곳에 고정한다 —
+ * 반격은 방어측이 살아남았을 때만 일어나고, 반격으로 원 공격자가 쓰러지면 그 자리에서 전장을 떠난다.
+ */
+function counterAttack(
+  ctx: BattleContext,
+  state: BattleState,
+  defender: Unit,
+  attacker: Unit,
+  rng: Rng,
+): BattleEvent[] {
+  if (!classOf(ctx, defender).flags.includes("counterAttack")) return [];
+  if (!inAttackRange(ctx, defender, attacker)) return [];
+
+  const damage = physicalDamage(ctx, defender, attacker, rng);
+  attacker.hp -= damage;
+
+  const events: BattleEvent[] = [
+    { type: "countered", attackerId: defender.officerId, defenderId: attacker.officerId, damage },
+  ];
+  events.push(...gainExp(ctx, defender, attackExp(ctx, damage)));
+
+  if (attacker.hp <= 0) {
+    state.units.splice(state.units.indexOf(attacker), 1);
+    events.push({ type: "defeated", officerId: attacker.officerId });
+    events.push(...grantDefeatExp(ctx, state, defender));
+    return events;
+  }
+
+  events.push(...changeMorale(ctx, attacker, -ctx.data.combatConfig.moraleLossOnHit));
+  return events;
+}
+
 function unitOf(state: BattleState, officerId: string): Unit {
   const unit = state.units.find((candidate) => candidate.officerId === officerId);
   if (!unit) throw new BattleCommandError(`부대 '${officerId}'가 전장에 없다`);
@@ -124,15 +160,17 @@ export function applyCommand(
       ];
       events.push(...gainExp(ctx, unit, attackExp(ctx, damage)));
 
-      // 반격은 없다([상세 스펙 §1.1]). 병과 플래그 `counterAttack`을 가진 병과가 데이터에 들어올 때 함께 구현한다.
       if (target.hp <= 0) {
         state.units.splice(state.units.indexOf(target), 1);
         events.push({ type: "defeated", officerId: target.officerId });
         events.push(...grantDefeatExp(ctx, state, unit));
-      } else {
-        // 살아남은 부대만 사기를 잃는다 — 전장을 떠난 부대의 사기는 남는 상태가 아니다([상세 스펙 §1.4]).
-        events.push(...changeMorale(ctx, target, -ctx.data.combatConfig.moraleLossOnHit));
+        // 격파된 부대는 반격하지 않는다 — 전장을 떠난 뒤다.
+        return events;
       }
+
+      // 살아남은 부대만 사기를 잃는다 — 전장을 떠난 부대의 사기는 남는 상태가 아니다([상세 스펙 §1.4]).
+      events.push(...changeMorale(ctx, target, -ctx.data.combatConfig.moraleLossOnHit));
+      events.push(...counterAttack(ctx, state, target, unit, rng));
       return events;
     }
 

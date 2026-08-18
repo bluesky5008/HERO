@@ -17,6 +17,12 @@ const STEPS: readonly Pos[] = [
 const key = ([x, y]: Pos): string => `${x},${y}`;
 
 /**
+ * 지형 영향을 받지 않을 때의 이동 코스트. 평지 한 칸과 같은 값이며 "보정 없음"의 정의라
+ * 튜닝 대상이 아니다 — 지형별 실제 코스트는 전부 `terrain.json`이 정한다.
+ */
+const NO_PENALTY_COST = 1;
+
+/**
  * 두 칸 사이의 거리. 방향 수가 척도를 정한다 —
  * 4방향이면 상하좌우 합(마름모), 8방향이면 대각을 한 칸으로 세는 정사각형([상세 스펙 §1.3]).
  * 공격 사거리와 책략 사거리가 같은 자를 쓰도록 여기 한 곳에 둔다.
@@ -37,10 +43,19 @@ export function gridDistance([ax, ay]: Pos, [bx, by]: Pos, directions: 4 | 8): n
 function stepCost(cls: UnitClass, terrain: Terrain | undefined): number | null {
   // 정의되지 않은 지형으로는 들어가지 않는다. 앱을 죽이는 대신 길을 막고, validate가 별도로 보고한다(NFR-03).
   if (!terrain) return null;
+  // 병과가 금지한 지형은 어떤 플래그도 열지 못한다 — 좁은 규칙이 가장 세다.
   if (cls.movementRules.forbidden.includes(terrain.id)) return null;
 
   const base = terrain.moveCost[cls.family];
-  if (base === "blocked") return null;
+
+  // `mountainMove`는 지형표가 막은 칸을 열어 준다([상세 스펙 §1.2]의 산 이동).
+  // 병과 규칙이 지형표를 이긴다는 위 원칙의 연장이며, 그래도 막아야 하는 칸(강)은 `forbidden`이 걸러낸다.
+  if (base === "blocked") {
+    return cls.flags.includes("mountainMove") ? NO_PENALTY_COST : null;
+  }
+
+  // `noTerrainPenalty`는 지형이 무엇이든 평지처럼 지난다 — `halved` 가중도 받지 않는다.
+  if (cls.flags.includes("noTerrainPenalty")) return NO_PENALTY_COST;
 
   return cls.movementRules.halved.includes(terrain.id) ? base * 2 : base;
 }

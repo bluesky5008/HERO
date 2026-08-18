@@ -1,38 +1,242 @@
 {
   "sword_soldier": {
-    "idle": { "frames": [0, 1], "fps": 2 },
-    "move": { "frames": [2, 3, 4, 5], "fps": 8 },
-    "attack": { "frames": [6, 7, 8], "fps": 10, "once": true },
-    "damaged": { "frames": [9], "fps": 1, "flash": true }
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "move": {
+      "frames": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "fps": 8
+    },
+    "attack": {
+      "frames": [
+        6,
+        7,
+        8
+      ],
+      "fps": 10,
+      "once": true
+    },
+    "damaged": {
+      "frames": [
+        9
+      ],
+      "fps": 1,
+      "flash": true
+    }
   },
   "spear_soldier": {
-    "idle": { "frames": [0, 1], "fps": 2 },
-    "move": { "frames": [2, 3, 4, 5], "fps": 8 },
-    "attack": { "frames": [6, 7, 8], "fps": 10, "once": true },
-    "damaged": { "frames": [9], "fps": 1, "flash": true }
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "move": {
+      "frames": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "fps": 8
+    },
+    "attack": {
+      "frames": [
+        6,
+        7,
+        8
+      ],
+      "fps": 10,
+      "once": true
+    },
+    "damaged": {
+      "frames": [
+        9
+      ],
+      "fps": 1,
+      "flash": true
+    }
   },
   "light_cavalry": {
-    "idle": { "frames": [0, 1], "fps": 2 },
-    "move": { "frames": [2, 3, 4, 5], "fps": 10 },
-    "attack": { "frames": [6, 7, 8], "fps": 12, "once": true },
-    "damaged": { "frames": [9], "fps": 1, "flash": true }
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "move": {
+      "frames": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "fps": 10
+    },
+    "attack": {
+      "frames": [
+        6,
+        7,
+        8
+      ],
+      "fps": 12,
+      "once": true
+    },
+    "damaged": {
+      "frames": [
+        9
+      ],
+      "fps": 1,
+      "flash": true
+    }
   },
   "heavy_cavalry": {
-    "idle": { "frames": [0, 1], "fps": 2 },
-    "move": { "frames": [2, 3, 4, 5], "fps": 9 },
-    "attack": { "frames": [6, 7, 8], "fps": 12, "once": true },
-    "damaged": { "frames": [9], "fps": 1, "flash": true }
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "move": {
+      "frames": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "fps": 9
+    },
+    "attack": {
+      "frames": [
+        6,
+        7,
+        8
+      ],
+      "fps": 12,
+      "once": true
+    },
+    "damaged": {
+      "frames": [
+        9
+      ],
+      "fps": 1,
+      "flash": true
+    }
   },
   "archer": {
-    "idle": { "frames": [0, 1], "fps": 2 },
-    "move": { "frames": [2, 3, 4, 5], "fps": 8 },
-    "attack": { "frames": [6, 7, 8, 9], "fps": 10, "once": true },
-    "damaged": { "frames": [10], "fps": 1, "flash": true }
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "move": {
+      "frames": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "fps": 8
+    },
+    "attack": {
+      "frames": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "fps": 10,
+      "once": true
+    },
+    "damaged": {
+      "frames": [
+        10
+      ],
+      "fps": 1,
+      "flash": true
+    }
   },
   "crossbow": {
-    "idle": { "frames": [0, 1], "fps": 2 },
-    "move": { "frames": [2, 3, 4, 5], "fps": 7 },
-    "attack": { "frames": [6, 7, 8, 9], "fps": 12, "once": true },
-    "damaged": { "frames": [10], "fps": 1, "flash": true }
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "move": {
+      "frames": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "fps": 7
+    },
+    "attack": {
+      "frames": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "fps": 12,
+      "once": true
+    },
+    "damaged": {
+      "frames": [
+        10
+      ],
+      "fps": 1,
+      "flash": true
+    }
+  },
+  "bandit": {
+    "idle": {
+      "frames": [
+        0,
+        1
+      ],
+      "fps": 2
+    },
+    "move": {
+      "frames": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "fps": 8
+    },
+    "attack": {
+      "frames": [
+        6,
+        7,
+        8
+      ],
+      "fps": 10,
+      "once": true
+    },
+    "damaged": {
+      "frames": [
+        9
+      ],
+      "fps": 1,
+      "flash": true
+    }
   }
 }

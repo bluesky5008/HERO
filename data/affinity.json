@@ -1,13 +1,82 @@
 [
-  { "attacker": "infantry", "defender": "infantry", "modifier": 1 },
-  { "attacker": "infantry", "defender": "cavalry", "modifier": 1.25 },
-  { "attacker": "infantry", "defender": "archer", "modifier": 0.75 },
-
-  { "attacker": "cavalry", "defender": "infantry", "modifier": 0.75 },
-  { "attacker": "cavalry", "defender": "cavalry", "modifier": 1 },
-  { "attacker": "cavalry", "defender": "archer", "modifier": 1.25 },
-
-  { "attacker": "archer", "defender": "infantry", "modifier": 1.25 },
-  { "attacker": "archer", "defender": "cavalry", "modifier": 0.75 },
-  { "attacker": "archer", "defender": "archer", "modifier": 1 }
+  {
+    "attacker": "infantry",
+    "defender": "infantry",
+    "modifier": 1
+  },
+  {
+    "attacker": "infantry",
+    "defender": "cavalry",
+    "modifier": 1.25
+  },
+  {
+    "attacker": "infantry",
+    "defender": "archer",
+    "modifier": 0.75
+  },
+  {
+    "attacker": "cavalry",
+    "defender": "infantry",
+    "modifier": 0.75
+  },
+  {
+    "attacker": "cavalry",
+    "defender": "cavalry",
+    "modifier": 1
+  },
+  {
+    "attacker": "cavalry",
+    "defender": "archer",
+    "modifier": 1.25
+  },
+  {
+    "attacker": "archer",
+    "defender": "infantry",
+    "modifier": 1.25
+  },
+  {
+    "attacker": "archer",
+    "defender": "cavalry",
+    "modifier": 0.75
+  },
+  {
+    "attacker": "archer",
+    "defender": "archer",
+    "modifier": 1
+  },
+  {
+    "attacker": "special",
+    "defender": "archer",
+    "modifier": 1
+  },
+  {
+    "attacker": "archer",
+    "defender": "special",
+    "modifier": 1
+  },
+  {
+    "attacker": "special",
+    "defender": "cavalry",
+    "modifier": 1
+  },
+  {
+    "attacker": "cavalry",
+    "defender": "special",
+    "modifier": 1
+  },
+  {
+    "attacker": "special",
+    "defender": "infantry",
+    "modifier": 1
+  },
+  {
+    "attacker": "infantry",
+    "defender": "special",
+    "modifier": 1
+  },
+  {
+    "attacker": "special",
+    "defender": "special",
+    "modifier": 1
+  }
 ]

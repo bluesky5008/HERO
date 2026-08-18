@@ -11,7 +11,8 @@ import { makeBattle, type BattleFixtureOptions, type UnitSpec } from "./fixtures
 
 /**
  * 커맨드 적용([상세 스펙 §1.1, §1.3], DES-01 → FR-02).
- * 페이즈당 이동 1회 + 행동 1회, 순서는 "이동 → 행동" 고정이고 반격은 없다.
+ * 페이즈당 이동 1회 + 행동 1회, 순서는 "이동 → 행동" 고정이다.
+ * 반격은 `counterAttack` 플래그를 가진 병과만 한다(TASK-27).
  */
 
 const PLAIN = Array.from({ length: 7 }, () => ".......");
@@ -312,5 +313,79 @@ describe("applyCommand — 결정론 (VER-07)", () => {
 
   it("다른 시드는 다른 결과를 낸다", () => {
     expect(run(42)).not.toEqual(run(43));
+  });
+});
+
+describe("반격 (counterAttack 플래그 — [상세 스펙 §1.1])", () => {
+  /** 친위대(반격 플래그)를 두 번째 자리에 두고 첫 부대가 친다. */
+  const strike = (specs: UnitSpec[], options: BattleFixtureOptions = {}) => {
+    const b = battle(specs, options);
+    const events = b.apply({ type: "attack", officerId: "foot", targetId: "guardsman" });
+    return { ...b, events };
+  };
+
+  it("사거리 안에서 피격하면 한 번 반격한다", () => {
+    const b = strike([at("foot", "player", [1, 1]), at("guardsman", "enemy", [2, 1])]);
+
+    const counters = b.events.filter((event) => event.type === "countered");
+    expect(counters).toHaveLength(1);
+    expect(b.unit("foot")!.hp).toBeLessThan(b.unit("foot")!.hpMax);
+  });
+
+  it("반격이 사거리 밖이면 반격하지 않는다", () => {
+    // 발석차는 최소 사거리 2라 인접한 상대를 칠 수 없다 — 친위대가 그 자리에 있으면 반격이 닿지 않는다.
+    const b = battle([at("siege", "player", [1, 1]), at("guardsman", "enemy", [3, 1])]);
+    const events = b.apply({ type: "attack", officerId: "siege", targetId: "guardsman" });
+
+    expect(events.some((event) => event.type === "countered")).toBe(false);
+    expect(b.unit("siege")!.hp).toBe(b.unit("siege")!.hpMax);
+  });
+
+  it("플래그가 없는 병과는 M1대로 반격하지 않는다", () => {
+    const b = battle([at("foot", "player", [1, 1]), at("foot2", "enemy", [2, 1])]);
+    const events = b.apply({ type: "attack", officerId: "foot", targetId: "foot2" });
+
+    expect(events.some((event) => event.type === "countered")).toBe(false);
+    expect(b.unit("foot")!.hp).toBe(b.unit("foot")!.hpMax);
+  });
+
+  it("격파된 부대는 반격하지 않는다", () => {
+    const b = strike([
+      at("foot", "player", [1, 1]),
+      { ...at("guardsman", "enemy", [2, 1]), hp: 1 },
+    ]);
+
+    expect(b.events.some((event) => event.type === "countered")).toBe(false);
+    expect(b.unit("guardsman")).toBeUndefined();
+  });
+
+  it("반격으로 공격자가 격파되면 전장에서 사라진다", () => {
+    const b = strike([
+      { ...at("foot", "player", [1, 1]), hp: 1 },
+      at("guardsman", "enemy", [2, 1]),
+    ]);
+
+    expect(b.events).toContainEqual({ type: "defeated", officerId: "foot" });
+    expect(b.state.units.map((unit) => unit.officerId)).toEqual(["guardsman"]);
+  });
+
+  it("반격은 공격 이벤트 뒤에 온다", () => {
+    const b = strike([at("foot", "player", [1, 1]), at("guardsman", "enemy", [2, 1])]);
+
+    expect(b.events.findIndex((event) => event.type === "countered")).toBeGreaterThan(
+      b.events.findIndex((event) => event.type === "attacked"),
+    );
+  });
+
+  it("반격한 부대도 경험치를 얻는다", () => {
+    const b = strike([at("foot", "player", [1, 1]), at("guardsman", "enemy", [2, 1])]);
+
+    expect(b.unit("guardsman")!.exp).toBeGreaterThan(0);
+  });
+
+  it("반격을 맞은 공격자도 사기를 잃는다", () => {
+    const b = strike([at("foot", "player", [1, 1]), at("guardsman", "enemy", [2, 1])]);
+
+    expect(b.unit("foot")!.morale).toBeLessThan(100);
   });
 });

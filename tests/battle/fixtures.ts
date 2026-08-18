@@ -12,6 +12,7 @@ export const TILE_CHARS: Record<string, string> = {
   ".": "plain",
   f: "forest",
   "^": "mountain",
+  "#": "river", // 누구도 건너지 못하는 지형 — 플래그가 있어도 막히는지 보려면 필요하다
   v: "village", // 거점 — 턴 시작 회복과 공격 책략 무효가 걸린다([상세 스펙 §1.7])
   "?": "swamp", // terrain.json에 없는 지형 — 데이터 내성 확인용(NFR-03)
 };
@@ -34,7 +35,8 @@ const TERRAIN = [
   { id: "plain", name: "평지", defenseBonus: 0, moveCost: moveCost(1) },
   // 기병 코스트를 1로 둔다 — 병과 이동 규칙과 지형표가 어긋날 때 어느 쪽이 이기는지 보려면 둘이 달라야 한다.
   { id: "forest", name: "숲", defenseBonus: 0.1, moveCost: moveCost(1, { band: 2 }) },
-  { id: "mountain", name: "산", defenseBonus: 0.2, moveCost: moveCost("blocked") },
+  { id: "mountain", name: "산", defenseBonus: 0.2, moveCost: moveCost("blocked", { special: 1 }) },
+  { id: "river", name: "강", defenseBonus: 0, moveCost: moveCost("blocked") },
   { id: "village", name: "마을", defenseBonus: 0.15, moveCost: moveCost(1), stronghold: true },
 ].map((terrain) => ({ placeholderColor: "#7fa650", stronghold: false, ...terrain }));
 
@@ -49,6 +51,10 @@ const CLASSES = [
   // 인접한 적을 칠 수 없는 병과 — 최소 사거리가 실제로 걸리는지 보려면 min > 1인 데이터가 있어야 한다.
   { id: "catapult", name: "발석차", family: "archer", movement: 4, attackMod: 16, defenseMod: 4, attackRange: { min: 2, max: 3, directions: 4 as const } },
   { id: "music_band", name: "군악대", family: "band", movement: 4, attackMod: 4, defenseMod: 8, tactics: ["cheer", "taunt", "bewilder"] },
+  // 병과 플래그를 시험할 병과들([상세 스펙 §1.1·§1.2]).
+  { id: "guard", name: "친위대", family: "infantry", movement: 5, attackMod: 10, defenseMod: 12, flags: ["counterAttack"] },
+  { id: "bandit", name: "산적", family: "infantry", movement: 5, attackMod: 8, defenseMod: 8, flags: ["mountainMove"], movementRules: { forbidden: ["river"], halved: [] } },
+  { id: "scout", name: "척후병", family: "infantry", movement: 4, attackMod: 6, defenseMod: 6, flags: ["noTerrainPenalty"], movementRules: { forbidden: [], halved: ["forest"] } },
 ].map((cls) => ({
   tier: 1,
   upgradesTo: null,
@@ -158,6 +164,9 @@ const OFFICERS = [
   { id: "siege", name: "발석차 장수", classId: "catapult" },
   { id: "band", name: "군악대 장수", classId: "music_band" },
   { id: "mage", name: "주술사 장수", classId: "sorcerer" },
+  { id: "guardsman", name: "친위대 장수", classId: "guard" },
+  { id: "bandit1", name: "산적 두목", classId: "bandit" },
+  { id: "scout1", name: "척후 장수", classId: "scout" },
 ].map((officer) => ({
   war: 50,
   int: 50,

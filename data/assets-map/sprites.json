@@ -1,38 +1,65 @@
 {
   "sword_soldier": {
     "sheet": "units.png",
-    "frameSize": [32, 32],
+    "frameSize": [
+      32,
+      32
+    ],
     "baseRow": 0,
     "placeholderColor": "#c94f4f"
   },
   "spear_soldier": {
     "sheet": "units.png",
-    "frameSize": [32, 32],
+    "frameSize": [
+      32,
+      32
+    ],
     "baseRow": 1,
     "placeholderColor": "#a83232"
   },
   "light_cavalry": {
     "sheet": "units.png",
-    "frameSize": [32, 32],
+    "frameSize": [
+      32,
+      32
+    ],
     "baseRow": 2,
     "placeholderColor": "#4f7fc9"
   },
   "heavy_cavalry": {
     "sheet": "units.png",
-    "frameSize": [32, 32],
+    "frameSize": [
+      32,
+      32
+    ],
     "baseRow": 3,
     "placeholderColor": "#32559c"
   },
   "archer": {
     "sheet": "units.png",
-    "frameSize": [32, 32],
+    "frameSize": [
+      32,
+      32
+    ],
     "baseRow": 4,
     "placeholderColor": "#4fc98a"
   },
   "crossbow": {
     "sheet": "units.png",
-    "frameSize": [32, 32],
+    "frameSize": [
+      32,
+      32
+    ],
     "baseRow": 5,
     "placeholderColor": "#2f9c68"
+  },
+  "bandit": {
+    "sheet": "units.png",
+    "frameSize": [
+      32,
+      32
+    ],
+    "baseRow": 0,
+    "placeholderColor": "#c94f4f"
   }
 }

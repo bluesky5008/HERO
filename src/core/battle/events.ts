@@ -18,4 +18,5 @@ export type BattleEvent =
   | { type: "tacticUsed"; officerId: string; tacticId: string; to: Pos }
   | { type: "tacticMissed"; officerId: string; targetId: string }
   | { type: "itemUsed"; officerId: string; itemId: string }
-  | { type: "classChanged"; officerId: string; from: string; to: string };
+  | { type: "classChanged"; officerId: string; from: string; to: string }
+  | { type: "countered"; attackerId: string; defenderId: string; damage: number };
