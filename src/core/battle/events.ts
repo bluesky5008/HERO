@@ -26,4 +26,6 @@ export type BattleEvent =
   | { type: "dialogue"; lines: readonly { speaker: string; text: string }[] }
   | { type: "unitsSpawned"; officerIds: string[] }
   | { type: "unitRemoved"; officerId: string }
-  | { type: "itemGained"; officerId: string; itemId: string };
+  | { type: "itemGained"; officerId: string; itemId: string }
+  | { type: "duelStarted"; a: string; b: string }
+  | { type: "duelResolved"; winner: string; loser: string; fled: boolean };

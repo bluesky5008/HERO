@@ -1,11 +1,21 @@
 {
   "baseDamage": 300,
   "minDamage": 1,
-  "damageJitter": { "min": 0.9, "max": 1.1 },
+  "damageJitter": {
+    "min": 0.9,
+    "max": 1.1
+  },
   "moraleMax": 100,
   "moraleLossOnHit": 2,
-  "confusion": { "threshold": 30, "chance": 0.5 },
-  "strongholdRecovery": { "hpRatio": 0.1, "morale": 5, "mp": 2 },
+  "confusion": {
+    "threshold": 30,
+    "chance": 0.5
+  },
+  "strongholdRecovery": {
+    "hpRatio": 0.1,
+    "morale": 5,
+    "mp": 2
+  },
   "mpIntDivisor": 4,
   "itemSlots": 8,
   "tactic": {
@@ -13,8 +23,24 @@
     "hitMin": 10,
     "hitMax": 100,
     "damageIntDivisor": 200,
-    "strongholdBlocks": ["damage"]
+    "strongholdBlocks": [
+      "damage"
+    ]
   },
   "maxLevel": 99,
-  "exp": { "divisor": 10, "min": 1, "max": 40, "defeatBonus": 45, "perLevel": 100 }
+  "exp": {
+    "divisor": 10,
+    "min": 1,
+    "max": 40,
+    "defeatBonus": 45,
+    "perLevel": 100
+  },
+  "duel": {
+    "base": 50,
+    "warScale": 2,
+    "min": 5,
+    "max": 95,
+    "winnerExp": 100,
+    "winnerMorale": 10
+  }
 }

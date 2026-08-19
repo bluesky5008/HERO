@@ -1,6 +1,7 @@
 import type { EventAction, EventTrigger, Pos, StageEvent, StageUnit } from "../data/schemas";
 import type { Rng } from "../rng";
 import type { BattleEvent } from "../battle/events";
+import { resolveDuel } from "../battle/duel";
 import { gainExp } from "../battle/experience";
 import { changeMorale } from "../battle/morale";
 import {
@@ -150,9 +151,16 @@ function apply(
   action: EventAction,
   rng: Rng,
 ): BattleEvent[] {
-  void rng;
-
   switch (action.type) {
+    case "duel": {
+      const { events, aWon } = resolveDuel(ctx, state, action, rng);
+      if (aWon === null) return events;
+
+      // 승패에 딸린 액션은 일기토가 끝난 뒤 이어서 실행한다([상세 스펙 §3.3]).
+      const followUp = aWon ? action.onAWin : action.onBWin;
+      return [...events, ...followUp.flatMap((next) => apply(ctx, state, next, rng))];
+    }
+
     case "dialogue":
       return [{ type: "dialogue", lines: action.lines }];
 

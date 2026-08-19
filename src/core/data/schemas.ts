@@ -87,6 +87,18 @@ export const CombatConfigSchema = z.object({
      */
     strongholdBlocks: z.array(z.string().min(1)),
   }),
+  /** 일기토([상세 스펙 §7.2]) */
+  duel: z.object({
+    /** 승률 `clamp(base + 무력차 × warScale, min, max)` (백분율) */
+    base: z.number().nonnegative(),
+    warScale: z.number(),
+    min: z.number().nonnegative(),
+    max: z.number().nonnegative(),
+    /** 승자가 얻는 경험치(초기 100 — 레벨업 임계와 같아 즉시 한 단계 오른다) */
+    winnerExp: z.number().int().nonnegative(),
+    /** 승자 진영 전체가 얻는 사기 */
+    winnerMorale: z.number().int(),
+  }),
   /** 레벨 상한([상세 스펙 §1.6]). 출진 명단의 레벨 상한과 달리 전투 중 성장의 천장이다. */
   maxLevel: z.number().int().positive(),
   /** 경험치([상세 스펙 §1.6]) */
@@ -371,7 +383,7 @@ export type EventTrigger = z.infer<typeof EventTriggerSchema>;
  * 이벤트 액션([상세 스펙 §3.3]). M2는 전투 안에서 끝나는 것만 구현한다 —
  * `choice`·`giveGold`·`joinOfficer`·`gameOver`는 캠페인(M3), `duel`은 M2 TASK-30이 더한다.
  */
-export const EventActionSchema = z.discriminatedUnion("type", [
+const SimpleEventActionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("dialogue"),
     lines: z.array(z.object({ speaker: z.string().min(1), text: z.string().min(1) })).min(1),
@@ -393,7 +405,27 @@ export const EventActionSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("endBattle"), result: z.enum(["victory", "defeat"]) }),
 ]);
+export type SimpleEventAction = z.infer<typeof SimpleEventActionSchema>;
+
+/**
+ * 일기토([상세 스펙 §7]). 이벤트 트리거로만 발동한다.
+ * 승패 뒤에 이어지는 액션은 다시 일기토를 부르지 않는다 — 중첩할 이유가 없어 계약을 재귀로 넓히지 않았다.
+ */
+const DuelActionSchema = z.object({
+  type: z.literal("duel"),
+  a: z.string().min(1),
+  b: z.string().min(1),
+  /** `judge`는 무력차로 판정하고 난수를 한 번 쓴다. 나머지는 스크립트가 정한 승패다. */
+  outcome: z.enum(["aWins", "bWins", "judge"]),
+  /** 패자가 전장을 떠나는 방식. 괴멸은 격파와 같고, 퇴각은 잃은 것으로 치지 않는다. */
+  loser: z.enum(["destroyed", "retreats"]).default("destroyed"),
+  onAWin: z.array(SimpleEventActionSchema).default([]),
+  onBWin: z.array(SimpleEventActionSchema).default([]),
+});
+
+export const EventActionSchema = z.union([SimpleEventActionSchema, DuelActionSchema]);
 export type EventAction = z.infer<typeof EventActionSchema>;
+export type DuelAction = z.infer<typeof DuelActionSchema>;
 
 /** 스테이지 이벤트 하나([상세 스펙 §3.1]). */
 export const StageEventSchema = z.object({
