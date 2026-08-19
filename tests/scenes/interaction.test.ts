@@ -3,7 +3,7 @@ import { reachableTiles } from "../../src/core/battle/movement";
 import type { BattleState } from "../../src/core/battle/state";
 import { createRng } from "../../src/core/rng";
 import { createInteraction } from "../../src/scenes/BattleInteraction";
-import { asKeys, makeBattle, type UnitSpec } from "../battle/fixtures";
+import { asKeys, makeBattle, type BattleFixtureOptions, type UnitSpec } from "../battle/fixtures";
 
 /**
  * 전투 입력 상태 기계(TASK-19).
@@ -273,5 +273,187 @@ describe("적 페이즈", () => {
     ui.confirm([1, 1]);
 
     expect(ui.mode).toBe("idle");
+  });
+});
+
+describe("행동 메뉴 (TASK-32)", () => {
+  const WIDE = ["........", "........", "........", "........"];
+
+  const open = (specs: UnitSpec[], options: BattleFixtureOptions = {}) => {
+    const { ctx, state } = makeBattle(WIDE, specs, options);
+    const ui = createInteraction(ctx, state, createRng(7));
+    ui.confirm(specs[0]!.pos); // 부대 선택
+    ui.confirm(specs[0]!.pos); // 제자리 이동 확정 → 행동 메뉴
+    return { ctx, state, ui };
+  };
+
+  const reasonOf = (ui: ReturnType<typeof createInteraction>, action: string) =>
+    ui.menu().find((choice) => choice.value === action)?.reason;
+
+  it("사거리에 적이 없으면 공격이 비활성이다", () => {
+    const { ui } = open([
+      { officerId: "foot", side: "player", pos: [1, 1] },
+      { officerId: "foot2", side: "enemy", pos: [6, 3] },
+    ]);
+
+    expect(reasonOf(ui, "attack")).not.toBeNull();
+    expect(reasonOf(ui, "wait")).toBeNull();
+  });
+
+  it("책략 목록이 병과·책략치·사거리로 걸러진다 ([상세 스펙 §1.5])", () => {
+    const { ui } = open([
+      { officerId: "mage", side: "player", pos: [1, 1] },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+
+    const names = ui.tactics().map((choice) => choice.value.id);
+    // 주술사는 전 카테고리를 배운다.
+    expect(names).toContain("fire_arrow");
+    expect(ui.tactics().every((choice) => choice.value.cost <= 100)).toBe(true);
+  });
+
+  it("책략치가 모자라면 그 책략에 이유가 붙는다", () => {
+    const { ui } = open([
+      { officerId: "mage", side: "player", pos: [1, 1], mp: 0 },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+
+    expect(ui.tactics().every((choice) => choice.reason !== null)).toBe(true);
+    expect(reasonOf(ui, "tactic")).not.toBeNull();
+  });
+
+  it("소지품이 없으면 아이템 메뉴가 비활성이다", () => {
+    const { ui } = open([{ officerId: "foot", side: "player", pos: [1, 1] }]);
+
+    expect(ui.items()).toEqual([]);
+    expect(reasonOf(ui, "item")).not.toBeNull();
+  });
+
+  it("장비만 지니면 아이템 메뉴가 여전히 비활성이다 — 쓰는 아이템이 아니다", () => {
+    const { ui } = open([
+      { officerId: "foot", side: "player", pos: [1, 1], items: ["iron_sword"] },
+    ]);
+
+    expect(ui.items()).toHaveLength(1);
+    expect(ui.items()[0]!.reason).not.toBeNull();
+    expect(reasonOf(ui, "item")).not.toBeNull();
+  });
+
+  it("보물 칸에서만 조사가 활성이다 ([상세 스펙 §1.7])", () => {
+    const treasures = [{ pos: [1, 1] as [number, number], itemId: "herb" }];
+    const on = open([{ officerId: "foot", side: "player", pos: [1, 1] }], { treasures });
+    const off = open([{ officerId: "foot", side: "player", pos: [2, 1] }], { treasures });
+
+    expect(reasonOf(on.ui, "investigate")).toBeNull();
+    expect(reasonOf(off.ui, "investigate")).not.toBeNull();
+  });
+
+  it("조사를 고르면 보물을 얻고 행동이 끝난다", () => {
+    const treasures = [{ pos: [1, 1] as [number, number], itemId: "herb" }];
+    const { ui, state } = open([{ officerId: "foot", side: "player", pos: [1, 1] }], { treasures });
+
+    ui.choose("investigate");
+
+    expect(state.units[0]!.items).toEqual(["herb"]);
+    expect(ui.mode).toBe("idle");
+  });
+});
+
+describe("책략·아이템 대상 지정 (TASK-32)", () => {
+  const WIDE = ["........", "........", "........", "........"];
+
+  const ready = (specs: UnitSpec[]) => {
+    const { ctx, state } = makeBattle(WIDE, specs);
+    const ui = createInteraction(ctx, state, createRng(7));
+    ui.confirm(specs[0]!.pos);
+    ui.confirm(specs[0]!.pos);
+    return { ctx, state, ui };
+  };
+
+  it("책략을 고르면 대상 지정으로 넘어가고 고를 수 있는 칸이 나온다", () => {
+    const { ui } = ready([
+      { officerId: "mage", side: "player", pos: [1, 1] },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+
+    ui.chooseTactic("fire_arrow");
+
+    expect(ui.mode).toBe("targeting");
+    expect(ui.targetTiles().length).toBeGreaterThan(0);
+  });
+
+  it("대상 지정 중 취소하면 행동 메뉴로 돌아간다", () => {
+    const { ui } = ready([
+      { officerId: "mage", side: "player", pos: [1, 1] },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+
+    ui.chooseTactic("fire_arrow");
+    ui.cancel();
+
+    expect(ui.mode).toBe("acting");
+    expect(ui.targetTiles()).toEqual([]);
+  });
+
+  it("고를 수 없는 칸을 누르면 아무 일도 하지 않는다", () => {
+    const { ui, state } = ready([
+      { officerId: "mage", side: "player", pos: [1, 1] },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+    const before = state.units[0]!.mp;
+
+    ui.chooseTactic("fire_arrow");
+    ui.confirm([7, 3]); // 사거리 밖
+
+    expect(state.units[0]!.mp).toBe(before);
+    expect(ui.mode).toBe("targeting");
+  });
+
+  it("대상을 확정하면 책략이 적용되고 선택이 풀린다", () => {
+    const { ui, state } = ready([
+      { officerId: "mage", side: "player", pos: [1, 1] },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+    const before = state.units[1]!.hp;
+
+    ui.chooseTactic("fire_arrow");
+    ui.confirm([2, 1]);
+
+    expect(state.units[1]!.hp).toBeLessThan(before);
+    expect(ui.mode).toBe("idle");
+  });
+
+  it("쓸 수 없는 책략은 골라지지 않는다", () => {
+    const { ui } = ready([
+      { officerId: "mage", side: "player", pos: [1, 1], mp: 0 },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+
+    ui.chooseTactic("fire_arrow");
+
+    expect(ui.mode).toBe("acting");
+  });
+
+  it("대상이 필요 없는 아이템은 그 자리에서 쓰인다", () => {
+    const { ui, state } = ready([
+      { officerId: "foot", side: "player", pos: [1, 1], level: 15, items: ["spear_manual"] },
+    ]);
+
+    ui.chooseItem("spear_manual");
+
+    expect(state.units[0]!.classId).toBe("spear_soldier");
+    expect(ui.mode).toBe("idle");
+  });
+
+  it("소모품은 대상 지정으로 넘어간다", () => {
+    const { ui } = ready([
+      { officerId: "foot", side: "player", pos: [1, 1], items: ["fire_scroll"] },
+      { officerId: "foot2", side: "enemy", pos: [2, 1] },
+    ]);
+
+    ui.chooseItem("fire_scroll");
+
+    expect(ui.mode).toBe("targeting");
+    expect(ui.targetTiles().length).toBeGreaterThan(0);
   });
 });

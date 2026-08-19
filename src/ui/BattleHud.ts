@@ -10,13 +10,24 @@ import type { Weather } from "../core/data/schemas";
  * Zustand 스토어는 화면이 전투 하나뿐인 M1에서는 도입하지 않는다([전체 설계 §6.2], M3에서 도입).
  */
 
-export type MenuAction = "attack" | "wait";
+export type { MenuAction } from "../scenes/BattleInteraction";
+import type { MenuAction } from "../scenes/BattleInteraction";
 
 export interface MenuItem {
   action: MenuAction;
   label: string;
   /** 고를 수 없는 항목도 감추지 않고 흐리게 남긴다 — 사라지면 왜 못 하는지 알 수 없다. */
   enabled: boolean;
+  /** 흐린 이유. 눌러도 안 되는 까닭을 화면에 그대로 보여 준다. */
+  reason?: string | null;
+}
+
+/** 책략·아이템처럼 무엇을 쓸지 한 번 더 고르는 목록. */
+export interface SubMenuItem {
+  id: string;
+  label: string;
+  enabled: boolean;
+  reason?: string | null;
 }
 
 export interface HudView {
@@ -31,9 +42,19 @@ export interface HudView {
     hp: number;
     hpMax: number;
     morale: number;
+    mp: number;
+    mpMax: number;
+    level: number;
+    exp: number;
+    /** 혼란 같은 상태이상 표시. 없으면 빈 배열. */
+    conditions: string[];
   } | null;
   /** 행동 메뉴. `null`이면 감춘다. */
   menu: { items: MenuItem[]; index: number } | null;
+  /** 책략·아이템 목록. `null`이면 감춘다. */
+  subMenu: { title: string; items: SubMenuItem[]; index: number } | null;
+  /** 이벤트 연출 — 대화와 일기토 알림. 한 줄씩 보여 준다. */
+  banner: string | null;
   /** 예상 데미지([최소, 최대])와 대상 이름. 대상 선택 중에만 채운다. */
   forecast: { targetName: string; min: number; max: number } | null;
   outcome: Outcome | null;
@@ -61,19 +82,22 @@ function element(tag: string, className: string, parent: HTMLElement): HTMLEleme
 export function createBattleHud(
   parent: HTMLElement,
   onChoose: (action: MenuAction) => void,
+  onChooseSub: (id: string) => void = () => {},
 ): BattleHud {
   const root = element("div", "hud", parent);
   const status = element("div", "hud-status", root);
   const info = element("div", "hud-info", root);
   const forecast = element("div", "hud-forecast", root);
+  const banner = element("div", "hud-banner", root);
   const menu = element("div", "hud-menu", root);
+  const subMenu = element("div", "hud-submenu", root);
   const result = element("div", "hud-result", root);
   element("div", "hud-help", root).textContent =
     "좌클릭·Z 결정 / 우클릭·X 취소 / 방향키 커서";
 
   // 버튼은 메뉴가 열릴 때마다 새로 만들지 않고 한 번 만들어 두고 감춘다 — 클릭 핸들러가 쌓이지 않는다.
   const buttons = new Map<MenuAction, HTMLButtonElement>();
-  for (const action of ["attack", "wait"] as const) {
+  for (const action of ["attack", "tactic", "item", "investigate", "wait"] as const) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "hud-menu-item";
@@ -87,7 +111,14 @@ export function createBattleHud(
       status.textContent = `${view.turn}턴 · ${SIDE_LABEL[view.phase]} 페이즈 · 날씨 ${WEATHER_LABEL[view.weather]}`;
 
       info.textContent = view.unit
-        ? `${view.unit.officerName} (${view.unit.className}) · 병력 ${view.unit.hp}/${view.unit.hpMax} · 사기 ${view.unit.morale}`
+        ? [
+            `${view.unit.officerName} (${view.unit.className}) Lv${view.unit.level}`,
+            `병력 ${view.unit.hp}/${view.unit.hpMax}`,
+            `사기 ${view.unit.morale}`,
+            `책략 ${view.unit.mp}/${view.unit.mpMax}`,
+            `경험 ${view.unit.exp}`,
+            ...view.unit.conditions,
+          ].join(" · ")
         : "";
       info.dataset["side"] = view.unit?.side ?? "";
 
@@ -103,11 +134,36 @@ export function createBattleHud(
 
         button.textContent = item.label;
         button.disabled = !item.enabled;
+        button.title = item.reason ?? "";
         // 키보드 커서 위치를 화면에도 드러낸다 — 마우스와 키보드가 같은 메뉴를 가리켜야 한다.
         button.classList.toggle(
           "is-cursor",
           view.menu?.items.indexOf(item) === view.menu?.index,
         );
+      }
+
+      banner.textContent = view.banner ?? "";
+      banner.hidden = view.banner === null;
+
+      subMenu.hidden = view.subMenu === null;
+      subMenu.replaceChildren();
+      if (view.subMenu) {
+        const title = document.createElement("div");
+        title.className = "hud-submenu-title";
+        title.textContent = view.subMenu.title;
+        subMenu.appendChild(title);
+
+        view.subMenu.items.forEach((item, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "hud-submenu-item";
+          button.textContent = item.label;
+          button.disabled = !item.enabled;
+          button.title = item.reason ?? "";
+          button.classList.toggle("is-cursor", index === view.subMenu?.index);
+          button.addEventListener("click", () => onChooseSub(item.id));
+          subMenu.appendChild(button);
+        });
       }
 
       result.textContent = view.outcome ? OUTCOME_LABEL[view.outcome] : "";

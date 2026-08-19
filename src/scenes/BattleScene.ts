@@ -9,6 +9,7 @@ import { createRng } from "../core/rng";
 import { drawHighlights } from "../render/HighlightRenderer";
 import { createTilemapLayer } from "../render/TilemapRenderer";
 import { drawUnits } from "../render/UnitRenderer";
+import type { BattleEvent } from "../core/battle/events";
 import { createBattleHud, type MenuItem } from "../ui/BattleHud";
 import { createInteraction } from "./BattleInteraction";
 
@@ -54,16 +55,54 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
   battlefield.addChild(createTilemapLayer(stage, data.terrain, data.config), highlights, units);
   app.stage.addChild(battlefield);
 
-  const hud = createBattleHud(hudParent, (action) => {
-    if (locked()) return;
-    ui.choose(action);
-    afterCommand();
-  });
+  const hud = createBattleHud(
+    hudParent,
+    (action) => {
+      if (locked()) return;
+
+      // 책략·아이템은 무엇을 쓸지 한 번 더 고른다 — 목록을 열고 커맨드는 아직 내지 않는다.
+      if (action === "tactic" || action === "item") {
+        subMenu = action;
+        subIndex = 0;
+        render();
+        return;
+      }
+
+      subMenu = null;
+      ui.choose(action);
+      afterCommand();
+    },
+    (id) => {
+      if (locked() || !subMenu) return;
+
+      const events = subMenu === "tactic" ? ui.chooseTactic(id) : ui.chooseItem(id);
+      subMenu = null;
+      remember(events);
+      afterCommand();
+    },
+  );
 
   let cursor: Pos = state.units.find((unit) => unit.side === "player")?.pos ?? [0, 0];
   let menuIndex = 0;
+  let subMenu: "tactic" | "item" | null = null;
+  let subIndex = 0;
   let busy = false;
   let result: Outcome | null = null;
+  /** 방금 일어난 연출용 이벤트의 한 줄 요약. 다음 조작까지 화면에 남는다. */
+  let banner: string | null = null;
+
+  /** 대화·일기토·이벤트 발동을 한 줄로 옮긴다 — 연출 큐의 최소 형태다([상세 스펙 §3.4]). */
+  function remember(events: readonly BattleEvent[]): void {
+    for (const event of events) {
+      if (event.type === "dialogue") {
+        banner = event.lines.map((line) => `${line.speaker}: ${line.text}`).join(" / ");
+      } else if (event.type === "duelStarted") {
+        banner = `일기토 — ${event.a} vs ${event.b}`;
+      } else if (event.type === "duelResolved") {
+        banner = `일기토 결과 — ${event.winner} 승리 (${event.loser} ${event.fled ? "퇴각" : "괴멸"})`;
+      }
+    }
+  }
 
   /** 승패가 갈렸거나 적이 움직이는 동안에는 입력을 받지 않는다. */
   const locked = (): boolean => busy || result !== null;
@@ -72,11 +111,30 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
     if (ui.mode !== "acting") return null;
 
     return {
-      items: [
-        { action: "attack", label: "공격", enabled: ui.targets().length > 0 },
-        { action: "wait", label: "대기", enabled: true },
-      ],
+      // 무엇을 고를 수 있는지는 상태 기계가 정한다 — 화면이 규칙을 다시 적으면 둘이 갈라진다.
+      items: ui.menu().map((choice) => ({
+        action: choice.value,
+        label: choice.name,
+        enabled: choice.reason === null,
+        reason: choice.reason,
+      })),
       index: menuIndex,
+    };
+  }
+
+  function subMenuView() {
+    if (ui.mode !== "acting" || !subMenu) return null;
+
+    const choices = subMenu === "tactic" ? ui.tactics() : ui.items();
+    return {
+      title: subMenu === "tactic" ? "책략" : "아이템",
+      items: choices.map((choice) => ({
+        id: subMenu === "tactic" ? (choice.value as { id: string }).id : (choice.value as { id: string }).id,
+        label: choice.name,
+        enabled: choice.reason === null,
+        reason: choice.reason,
+      })),
+      index: subIndex,
     };
   }
 
@@ -101,9 +159,16 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
             hp: hovered.hp,
             hpMax: hovered.hpMax,
             morale: hovered.morale,
+            mp: hovered.mp,
+            mpMax: hovered.mpMax,
+            level: hovered.level,
+            exp: hovered.exp,
+            conditions: hovered.confused ? ["혼란"] : [],
           }
         : null,
       menu: menu(),
+      subMenu: subMenuView(),
+      banner,
       forecast:
         target && forecast
           ? { targetName: officerOf(ctx, target).name, min: forecast[0], max: forecast[1] }
@@ -127,8 +192,8 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
 
   /** 페이즈를 넘기고 새 차례의 턴 시작 처리까지 끝낸다([상세 스펙 §1.1]) — 둘은 항상 붙어 있어야 한다. */
   function handOver(): void {
-    endPhase(ctx, state, rng);
-    beginPhase(ctx, state, rng);
+    remember(endPhase(ctx, state, rng));
+    remember(beginPhase(ctx, state, rng));
   }
 
   function runEnemyPhase(): void {
@@ -137,7 +202,7 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
     render();
 
     window.setTimeout(() => {
-      runAiPhase(ctx, state, rng);
+      remember(runAiPhase(ctx, state, rng));
       result = outcome(ctx, state);
       if (!result) handOver();
 
@@ -182,7 +247,7 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
     if (!pos) return;
 
     cursor = pos;
-    ui.confirm(pos);
+    remember(ui.confirm(pos));
     afterCommand();
   });
 
@@ -221,15 +286,30 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
     if (key === "z" || key === "Z" || key === "Enter") {
       const item = menu()?.items[menuIndex];
       if (item) {
-        if (item.enabled) ui.choose(item.action);
+        if (item.enabled) {
+          if (item.action === "tactic" || item.action === "item") {
+            subMenu = item.action;
+            subIndex = 0;
+            render();
+            return true;
+          }
+          remember(ui.choose(item.action));
+        }
       } else {
-        ui.confirm(cursor);
+        remember(ui.confirm(cursor));
       }
       afterCommand();
       return true;
     }
 
     if (key === "x" || key === "X" || key === "Escape") {
+      // 하위 목록이 열려 있으면 목록만 닫는다 — 한 번에 선택까지 풀리면 되돌리기가 거칠다.
+      if (subMenu) {
+        subMenu = null;
+        render();
+        return true;
+      }
+
       ui.cancel();
       menuIndex = 0;
       render();
@@ -240,8 +320,8 @@ export function startBattleScene({ app, data, stage, hudParent }: BattleSceneOpt
   }
 
   // 첫 플레이어 페이즈도 턴 시작 처리를 받는다 — `endPhase`를 거치지 않고 시작하는 유일한 차례다.
-  runEvents(ctx, state, "battleStart", [], rng);
-  beginPhase(ctx, state, rng);
+  remember(runEvents(ctx, state, "battleStart", [], rng));
+  remember(beginPhase(ctx, state, rng));
   afterCommand();
   console.info(
     `${stage.name} — 부대 ${state.units.length}개(아군 ${state.units.filter((unit) => unit.side === "player").length})로 전투 시작`,

@@ -107,6 +107,54 @@
       .hud-menu-item.is-cursor {
         border-color: #ffd54f;
       }
+      /* 책략·아이템 목록. 행동 메뉴 왼쪽에 붙는다. */
+      .hud-submenu {
+        right: 8.5rem;
+        bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 60%;
+        overflow-y: auto;
+        pointer-events: auto;
+      }
+      .hud-submenu-title {
+        padding: 0.25rem 0.5rem;
+        opacity: 0.7;
+        font-size: 0.85rem;
+      }
+      .hud-submenu-item {
+        min-width: 8rem;
+        padding: 0.4rem 0.75rem;
+        border: 1px solid #4a5568;
+        border-radius: 4px;
+        background: rgba(18, 22, 30, 0.92);
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .hud-submenu-item:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .hud-submenu-item.is-cursor {
+        border-color: #ffd54f;
+      }
+      /* 대화·일기토 알림. 화면 위쪽 가운데에 한 줄로 띄운다. */
+      .hud-banner {
+        top: 3.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 80%;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        background: rgba(18, 22, 30, 0.92);
+        text-align: center;
+      }
+      .hud-banner[hidden] {
+        display: none;
+      }
       .hud-result {
         inset: 0;
         display: grid;
