@@ -13,6 +13,8 @@ const party = (...overrides: Partial<StageUnit>[]): StageUnit[] =>
     level: 5,
     morale: 100,
     pos: [0, 2],
+    ai: "aggressive" as const,
+    aiParams: { anchor: null, escape: null },
     ...override,
   }));
 

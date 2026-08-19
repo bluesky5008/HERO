@@ -308,7 +308,16 @@ describe("액션 ([상세 스펙 §3.3])", () => {
     const b = withAction({
       type: "spawnUnits",
       side: "enemy",
-      units: [{ officerId: "horse", level: 5, morale: 100, pos: [6, 1] }],
+      units: [
+        {
+          officerId: "horse",
+          level: 5,
+          morale: 100,
+          pos: [6, 1],
+          ai: "aggressive",
+          aiParams: { anchor: null, escape: null },
+        },
+      ],
     });
 
     b.run("battleStart");
@@ -322,7 +331,16 @@ describe("액션 ([상세 스펙 §3.3])", () => {
     const b = withAction({
       type: "spawnUnits",
       side: "enemy",
-      units: [{ officerId: "foot", level: 5, morale: 100, pos: [6, 1] }],
+      units: [
+        {
+          officerId: "foot",
+          level: 5,
+          morale: 100,
+          pos: [6, 1],
+          ai: "aggressive",
+          aiParams: { anchor: null, escape: null },
+        },
+      ],
     });
 
     b.run("battleStart");
@@ -392,6 +410,13 @@ describe("액션 ([상세 스펙 §3.3])", () => {
     b.run("battleStart");
 
     expect(b.state.weather).toBe("rain");
+  });
+
+  it("setAiProfile이 적 부대의 행동 프로필을 바꾼다 ([상세 스펙 §5.3])", () => {
+    const b = withAction({ type: "setAiProfile", unit: "foot2", profile: "guard" });
+    b.run("battleStart");
+
+    expect(b.unit("foot2").ai).toBe("guard");
   });
 
   it("endBattle이 승패 판정을 덮어쓴다", () => {

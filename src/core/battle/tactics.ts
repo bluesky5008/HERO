@@ -72,12 +72,13 @@ export function tacticTargetRejection(
   caster: Unit,
   tactic: Tactic,
   to: Pos,
+  from: Pos = caster.pos,
 ): string | null {
   const [x, y] = to;
   if (x < 0 || y < 0 || x >= ctx.stage.map.width || y >= ctx.stage.map.height) {
     return `[${x}, ${y}]는 맵 밖이다`;
   }
-  if (gridDistance(caster.pos, to, classOf(ctx, caster).attackRange.directions) > tactic.range) {
+  if (gridDistance(from, to, classOf(ctx, caster).attackRange.directions) > tactic.range) {
     return `[${x}, ${y}]는 '${tactic.id}'의 사거리 밖이다`;
   }
 
@@ -116,7 +117,7 @@ function tacticDamage(
   target: Unit,
   tactic: Tactic,
   state: BattleState,
-  rng: Rng,
+  rng: Pick<Rng, "range">,
 ): number {
   const config = ctx.data.combatConfig;
   const difference = officerOf(ctx, caster).int - officerOf(ctx, target).int;
@@ -207,6 +208,27 @@ function applyToUnit(
       return { events, amount };
     }
   }
+}
+
+/**
+ * 난수를 쓰지 않고 재는 기대 성과 — 명중률 × 평균 피해(회복은 회복량).
+ * AI가 후보를 저울질할 때 실제 판정과 같은 공식을 쓰게 하려고 여기 둔다([상세 스펙 §5.2]).
+ */
+export function expectedTacticValue(
+  ctx: BattleContext,
+  state: BattleState,
+  caster: Unit,
+  tactic: Tactic,
+  target: Unit,
+): number {
+  if (tactic.effect === "healHp") return healAmount(tactic, target.hpMax - target.hp);
+  if (tactic.effect !== "damage") return 0;
+
+  const average = tacticDamage(ctx, caster, target, tactic, state, {
+    range: (min, max) => (min + max) / 2,
+  });
+  const chance = alwaysHits(tactic) ? 100 : hitChance(ctx, caster, target);
+  return (average * chance) / 100;
 }
 
 /**

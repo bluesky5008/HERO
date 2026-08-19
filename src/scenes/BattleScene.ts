@@ -258,7 +258,8 @@ function deployRoster(stage: Stage): StageUnit[] {
   for (const entry of stage.deployment.roster ?? []) {
     const pos = stage.deployment.zone[party.length];
     if (!pos || party.length >= stage.deployment.maxUnits) break;
-    party.push({ ...entry, pos });
+    // 출진 부대는 AI가 움직이지 않지만 배치 형태는 적 배치와 같으므로 기본값을 채운다.
+    party.push({ ...entry, pos, ai: "aggressive", aiParams: { anchor: null, escape: null } });
   }
   return party;
 }

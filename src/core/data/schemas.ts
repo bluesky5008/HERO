@@ -87,6 +87,30 @@ export const CombatConfigSchema = z.object({
      */
     strongholdBlocks: z.array(z.string().min(1)),
   }),
+  /**
+   * 적 AI 스코어링 가중치([상세 스펙 §5.2]의 W1~W6).
+   * 난이도 프리셋은 이 세트를 통째로 바꿔 만든다 — 코드가 아니라 데이터가 난이도를 정한다.
+   */
+  ai: z.object({
+    /** W1 예상 데미지 */
+    damage: z.number(),
+    /** W2 격파 가능 보너스 */
+    finish: z.number(),
+    /** W3 대상 위협도 */
+    threat: z.number(),
+    /** W4 받을 위험(인접한 상대 수로 잰다 — 반격이 기본이 아니라 다음 턴 피격 예상이다) */
+    risk: z.number(),
+    /** W5 내가 설 칸의 지형 방어 보정 */
+    terrain: z.number(),
+    /** W6 접근도(칠 수 없을 때 얼마나 가까워지는가) */
+    approach: z.number(),
+    /** `defensive`가 깨어나는 거리(기본 6) */
+    alertRange: z.number().int().positive(),
+    /** `support`가 아군을 회복시키기 시작하는 병력 비율 */
+    supportHealRatio: z.number().min(0).max(1),
+    /** `support`가 후퇴를 시작하는 자기 병력 비율 */
+    supportFleeRatio: z.number().min(0).max(1),
+  }),
   /** 일기토([상세 스펙 §7.2]) */
   duel: z.object({
     /** 승률 `clamp(base + 무력차 × warScale, min, max)` (백분율) */
@@ -333,8 +357,20 @@ export const RosterEntrySchema = z.object({
 });
 export type RosterEntry = z.infer<typeof RosterEntrySchema>;
 
+export const AI_PROFILES = ["aggressive", "defensive", "guard", "support", "flee"] as const;
+export const AiProfileSchema = z.enum(AI_PROFILES);
+export type AiProfile = z.infer<typeof AiProfileSchema>;
+
 /** 좌표까지 정해진 부대. 스테이지의 적 배치와 플레이어 출진 배치가 같은 형태다. */
-export const StageUnitSchema = RosterEntrySchema.extend({ pos: PosSchema });
+export const StageUnitSchema = RosterEntrySchema.extend({
+  pos: PosSchema,
+  /** 적 부대의 행동 프로필([상세 스펙 §5.1]). 플레이어 부대는 쓰지 않는다. */
+  ai: AiProfileSchema.default("aggressive"),
+  /** `guard`가 지킬 자리와 `flee`가 향할 탈출점 */
+  aiParams: z
+    .object({ anchor: PosSchema.nullable().default(null), escape: PosSchema.nullable().default(null) })
+    .default({ anchor: null, escape: null }),
+});
 export type StageUnit = z.infer<typeof StageUnitSchema>;
 
 
@@ -404,6 +440,8 @@ const SimpleEventActionSchema = z.discriminatedUnion("type", [
     delta: z.number().int(),
   }),
   z.object({ type: z.literal("endBattle"), result: z.enum(["victory", "defeat"]) }),
+  /** 원작의 "성문 앞 대기" 같은 스크립트성 행동은 프로필 교체로 재현한다([상세 스펙 §5.3]). */
+  z.object({ type: z.literal("setAiProfile"), unit: z.string().min(1), profile: AiProfileSchema }),
 ]);
 export type SimpleEventAction = z.infer<typeof SimpleEventActionSchema>;
 

@@ -223,6 +223,14 @@ function apply(
     case "endBattle":
       state.forcedOutcome = action.result;
       return [];
+
+    case "setAiProfile": {
+      const unit = unitOf(state, action.unit);
+      if (!unit) return [];
+
+      unit.ai = action.profile;
+      return [{ type: "aiProfileChanged", officerId: unit.officerId, profile: action.profile }];
+    }
   }
 }
 

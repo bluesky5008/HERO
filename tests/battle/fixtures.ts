@@ -183,6 +183,8 @@ export interface UnitSpec {
   morale?: number;
   hp?: number;
   confused?: boolean;
+  ai?: import("../../src/core/data/schemas").AiProfile;
+  aiParams?: { anchor?: Pos | null; escape?: Pos | null };
   exp?: number;
   mp?: number;
   items?: string[];
@@ -258,7 +260,16 @@ function makeStage(
     map: { width: tiles[0]?.length ?? 0, height: tiles.length, tiles },
     weather,
     deployment: { maxUnits: 1, zone: [[0, 0]] },
-    enemies: [{ officerId: "foot", level: 1, morale: 100, pos: [0, 0] }],
+    enemies: [
+      {
+        officerId: "foot",
+        level: 1,
+        morale: 100,
+        pos: [0, 0],
+        ai: "aggressive",
+        aiParams: { anchor: null, escape: null },
+      },
+    ],
     treasures,
     events,
     victory: { type: "annihilateEnemies" },
@@ -301,6 +312,11 @@ export function makeBattle(
       mp: spec.mp ?? mpMax,
       mpMax,
       items: spec.items ?? [],
+      ai: spec.ai ?? "aggressive",
+      aiParams: {
+        anchor: spec.aiParams?.anchor ?? null,
+        escape: spec.aiParams?.escape ?? null,
+      },
     };
   });
 

@@ -1,5 +1,14 @@
 import type { GameData } from "../data/integrity";
-import type { CombatConfig, Officer, Pos, Stage, StageUnit, UnitClass, Weather } from "../data/schemas";
+import type {
+  AiProfile,
+  CombatConfig,
+  Officer,
+  Pos,
+  Stage,
+  StageUnit,
+  UnitClass,
+  Weather,
+} from "../data/schemas";
 
 /**
  * 전투 상태와 그 구성([전체 설계 §6.3], DES-01).
@@ -33,6 +42,13 @@ export interface Unit {
   mpMax: number;
   /** 지닌 아이템 ID. `combatConfig.itemSlots`가 상한이다([FR-07]). */
   items: string[];
+  /**
+   * 행동 프로필([상세 스펙 §5.1]). 적 부대만 쓰며 이벤트로 바뀔 수 있다(`setAiProfile`).
+   * 배치 데이터가 아니라 상태에 두는 것은 전투 중에 바뀌기 때문이다.
+   */
+  ai: AiProfile;
+  /** `guard`가 지킬 자리와 `flee`가 향할 탈출점. 없으면 배치 좌표를 기준으로 삼는다. */
+  aiParams: { anchor: Pos | null; escape: Pos | null };
 }
 
 export interface BattleState {
@@ -128,6 +144,8 @@ export function makeUnit(data: GameData, officer: Officer, placement: StageUnit,
     mp: mpMax,
     mpMax,
     items: [],
+    ai: placement.ai,
+    aiParams: placement.aiParams,
   };
 }
 

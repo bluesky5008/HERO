@@ -130,6 +130,7 @@ export const validCombatConfig = {
   mpIntDivisor: 4,
   itemSlots: 8,
   tactic: { hitBase: 50, hitMin: 10, hitMax: 100, damageIntDivisor: 200, strongholdBlocks: ["damage"] },
+  ai: { damage: 1, finish: 500, threat: 0.5, risk: 80, terrain: 200, approach: 30, alertRange: 6, supportHealRatio: 0.5, supportFleeRatio: 0.3 },
   duel: { base: 50, warScale: 2, min: 5, max: 95, winnerExp: 100, winnerMorale: 10 },
   maxLevel: 99,
   exp: { divisor: 10, min: 1, max: 40, defeatBonus: 45, perLevel: 100 },

@@ -3,12 +3,11 @@ import { planUnitTurn, runAiPhase } from "../../src/core/battle/ai";
 import { createRng } from "../../src/core/rng";
 import type { BattleContext, BattleState, Unit } from "../../src/core/battle/state";
 import type { Pos } from "../../src/core/data/schemas";
-import { makeBattle, type UnitSpec } from "./fixtures";
+import { makeBattle, type BattleFixtureOptions, type UnitSpec } from "./fixtures";
 
 /**
- * 1단계 적 AI([전체 설계 §3.4], DES-01 → FR-11).
- * 가장 가까운 상대에게 접근해 공격하고, 닿지 않으면 이동만 한다.
- * 어떤 배치에서도 페이즈가 유한하게 끝나야 한다.
+ * 적 AI([상세 스펙 §5], DES-01 → FR-11, AC-12).
+ * 프로필과 가중치 스코어링으로 행동을 고르고, 어떤 배치에서도 페이즈가 유한하게 끝난다.
  */
 
 const PLAIN = Array.from({ length: 7 }, () => ".......");
@@ -72,43 +71,46 @@ describe("planUnitTurn", () => {
     ]);
   });
 
-  it("가장 가까운 상대를 고른다", () => {
+  it("칠 수 있는 상대가 있으면 공격을 고른다", () => {
     const { ctx, state, actor } = enemyPhase(PLAIN, [
       at("band", "enemy", [0, 0]),
-      at("foot", "player", [0, 3]), // 거리 3
-      at("foot2", "player", [4, 0]), // 거리 4 — 둘 다 이번 페이즈에 칠 수 있다
+      at("foot", "player", [0, 3]),
+      at("foot2", "player", [4, 0]),
     ]);
 
-    expect(planUnitTurn(ctx, state, actor("band"))).toContainEqual({
-      type: "attack",
-      officerId: "band",
-      targetId: "foot",
-    });
+    const commands = planUnitTurn(ctx, state, actor("band"));
+
+    // 어느 쪽을 고르는지는 가중치가 정한다([상세 스펙 §5.2]) — 여기서 고정하는 것은 "공격한다"까지다.
+    expect(commands.some((cmd) => cmd.type === "attack")).toBe(true);
   });
 
-  it("거리가 같으면 무장 ID 순으로 골라 결정론을 지킨다", () => {
-    const { ctx, state, actor } = enemyPhase(PLAIN, [
-      at("band", "enemy", [2, 2]),
-      at("foot2", "player", [4, 2]),
-      at("foot", "player", [0, 2]),
-    ]);
+  it("같은 배치는 언제나 같은 수를 낸다 (NFR-01)", () => {
+    const setup = () =>
+      enemyPhase(PLAIN, [
+        at("band", "enemy", [2, 2]),
+        at("foot2", "player", [4, 2]),
+        at("foot", "player", [0, 2]),
+      ]);
 
-    expect(planUnitTurn(ctx, state, actor("band"))).toContainEqual({
-      type: "attack",
-      officerId: "band",
-      targetId: "foot",
-    });
+    const first = setup();
+    const second = setup();
+
+    // 점수가 같은 후보가 여럿이어도 순서를 고정해 같은 수가 나와야 한다.
+    expect(planUnitTurn(first.ctx, first.state, first.actor("band"))).toEqual(
+      planUnitTurn(second.ctx, second.state, second.actor("band")),
+    );
   });
 
   it("갇혀서 접근할 수 없으면 대기한다", () => {
+    // 기병은 배우는 책략이 없어 갇히면 정말 할 일이 없다([상세 스펙 §1.5]).
     const rows = ["^^^^^", "^.^^^", "^^^^^", ".....", "....."];
     const { ctx, state, actor } = enemyPhase(rows, [
-      at("foot2", "enemy", [1, 1]),
+      at("horse", "enemy", [1, 1]),
       at("foot", "player", [0, 3]),
     ]);
 
-    expect(planUnitTurn(ctx, state, actor("foot2"))).toEqual([
-      { type: "wait", officerId: "foot2" },
+    expect(planUnitTurn(ctx, state, actor("horse"))).toEqual([
+      { type: "wait", officerId: "horse" },
     ]);
   });
 
@@ -179,5 +181,150 @@ describe("runAiPhase", () => {
 
     expect(actor("foot2").acted).toBe(true);
     expect(actor("horse").acted).toBe(false);
+  });
+});
+
+describe("프로필별 행동 ([상세 스펙 §5.1])", () => {
+  const WIDE = Array.from({ length: 12 }, () => "............");
+
+  const plan = (specs: UnitSpec[], officerId: string, options: BattleFixtureOptions = {}) => {
+    const { ctx, state } = makeBattle(WIDE, specs, options);
+    state.phase = "enemy";
+    const unit = state.units.find((candidate) => candidate.officerId === officerId)!;
+    return { ctx, state, unit, commands: planUnitTurn(ctx, state, unit) };
+  };
+
+  it("defensive는 경계 거리 밖에서는 대기한다", () => {
+    const b = plan(
+      [
+        { officerId: "foot2", side: "enemy", pos: [1, 1], ai: "defensive" },
+        { officerId: "foot", side: "player", pos: [11, 11] },
+      ],
+      "foot2",
+    );
+
+    expect(b.commands).toEqual([{ type: "wait", officerId: "foot2" }]);
+    expect(b.unit.ai).toBe("defensive");
+  });
+
+  it("defensive는 경계 거리 안에 들어오면 영구히 aggressive로 바뀐다", () => {
+    const b = plan(
+      [
+        { officerId: "foot2", side: "enemy", pos: [1, 1], ai: "defensive" },
+        { officerId: "foot", side: "player", pos: [4, 1] },
+      ],
+      "foot2",
+    );
+
+    expect(b.unit.ai).toBe("aggressive");
+    expect(b.commands.some((cmd) => cmd.type === "move")).toBe(true);
+  });
+
+  it("guard는 지정한 자리를 벗어나지 않는다", () => {
+    const b = plan(
+      [
+        { officerId: "foot2", side: "enemy", pos: [1, 1], ai: "guard" },
+        { officerId: "foot", side: "player", pos: [8, 1] },
+      ],
+      "foot2",
+    );
+
+    expect(b.commands.some((cmd) => cmd.type === "move")).toBe(false);
+  });
+
+  it("guard도 사거리 안의 상대는 친다", () => {
+    const b = plan(
+      [
+        { officerId: "foot2", side: "enemy", pos: [1, 1], ai: "guard" },
+        { officerId: "foot", side: "player", pos: [2, 1] },
+      ],
+      "foot2",
+    );
+
+    expect(b.commands).toContainEqual({ type: "attack", officerId: "foot2", targetId: "foot" });
+  });
+
+  it("flee는 지정한 탈출점으로 향한다", () => {
+    const b = plan(
+      [
+        {
+          officerId: "foot2",
+          side: "enemy",
+          pos: [5, 5],
+          ai: "flee",
+          aiParams: { escape: [11, 5] },
+        },
+        { officerId: "foot", side: "player", pos: [4, 5] },
+      ],
+      "foot2",
+    );
+
+    const move = b.commands.find((cmd) => cmd.type === "move");
+    expect(move).toBeDefined();
+    // 탈출점 쪽으로 가까워져야 한다.
+    expect(move && move.type === "move" && move.to[0]).toBeGreaterThan(5);
+  });
+
+  it("support는 다친 아군을 회복시킨다", () => {
+    const b = plan(
+      [
+        { officerId: "mage", side: "enemy", pos: [5, 5], ai: "support" },
+        { officerId: "foot2", side: "enemy", pos: [5, 6], hp: 100 },
+        { officerId: "foot", side: "player", pos: [1, 1] },
+      ],
+      "mage",
+    );
+
+    const tactic = b.commands.find((cmd) => cmd.type === "useTactic");
+    expect(tactic).toBeDefined();
+    expect(tactic && tactic.type === "useTactic" && tactic.tacticId).toBe("mend");
+  });
+
+  it("support는 자기 병력이 위험하면 물러난다", () => {
+    const b = plan(
+      [
+        { officerId: "mage", side: "enemy", pos: [5, 5], ai: "support", hp: 100 },
+        { officerId: "foot", side: "player", pos: [4, 5] },
+      ],
+      "mage",
+    );
+
+    const move = b.commands.find((cmd) => cmd.type === "move");
+    expect(move).toBeDefined();
+
+    // 어느 방향이든 상대에게서 멀어지기만 하면 된다.
+    const distance = ([x, y]: [number, number]) => Math.abs(x - 4) + Math.abs(y - 5);
+    expect(move && move.type === "move" && distance(move.to)).toBeGreaterThan(distance([5, 5]));
+  });
+});
+
+describe("책략 사용 판단 ([상세 스펙 §5.2])", () => {
+  const WIDE = Array.from({ length: 12 }, () => "............");
+
+  it("기대 피해가 통상 공격을 넘고 책략치가 넉넉하면 책략을 고른다", () => {
+    const { ctx, state } = makeBattle(WIDE, [
+      { officerId: "mage", side: "enemy", pos: [5, 5] },
+      { officerId: "foot", side: "player", pos: [6, 5] },
+    ]);
+    state.phase = "enemy";
+    const mage = state.units[0]!;
+
+    const commands = planUnitTurn(ctx, state, mage);
+
+    expect(commands.some((cmd) => cmd.type === "useTactic")).toBe(true);
+  });
+
+  it("책략치가 모자라면 통상 공격으로 돌아간다", () => {
+    const { ctx, state } = makeBattle(WIDE, [
+      { officerId: "mage", side: "enemy", pos: [5, 5], mp: 0 },
+      { officerId: "foot", side: "player", pos: [6, 5] },
+    ]);
+    state.phase = "enemy";
+    const mage = state.units[0]!;
+
+    const commands = planUnitTurn(ctx, state, mage);
+
+    expect(commands.some((cmd) => cmd.type === "useTactic")).toBe(false);
+    expect(commands.some((cmd) => cmd.type === "attack")).toBe(true);
   });
 });

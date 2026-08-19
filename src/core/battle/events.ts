@@ -28,4 +28,5 @@ export type BattleEvent =
   | { type: "unitRemoved"; officerId: string }
   | { type: "itemGained"; officerId: string; itemId: string }
   | { type: "duelStarted"; a: string; b: string }
-  | { type: "duelResolved"; winner: string; loser: string; fled: boolean };
+  | { type: "duelResolved"; winner: string; loser: string; fled: boolean }
+  | { type: "aiProfileChanged"; officerId: string; profile: string };
