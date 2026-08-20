@@ -1,0 +1,442 @@
+{
+  "id": "stage-m2",
+  "name": "M2 검증 전장",
+  "weather": {
+    "initial": "clear",
+    "rainChance": 0.34,
+    "rainDuration": 2
+  },
+  "map": {
+    "width": 14,
+    "height": 12,
+    "tiles": [
+      [
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain",
+        "mountain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "wasteland",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "forest",
+        "forest",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "bridge",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "river",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "village",
+        "castle_gate",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ],
+      [
+        "mountain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain",
+        "plain"
+      ]
+    ]
+  },
+  "deployment": {
+    "maxUnits": 3,
+    "zone": [
+      [
+        3,
+        10
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        6,
+        10
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        8,
+        10
+      ]
+    ],
+    "roster": [
+      {
+        "officerId": "liu_bei",
+        "level": 15
+      },
+      {
+        "officerId": "guan_yu",
+        "level": 8
+      },
+      {
+        "officerId": "zhang_fei",
+        "level": 8,
+        "morale": 26
+      }
+    ]
+  },
+  "enemies": [
+    {
+      "officerId": "deng_mao",
+      "level": 5,
+      "pos": [
+        5,
+        7
+      ],
+      "ai": "aggressive"
+    },
+    {
+      "officerId": "cheng_yuanzhi",
+      "level": 5,
+      "pos": [
+        9,
+        6
+      ],
+      "ai": "defensive"
+    },
+    {
+      "officerId": "zhang_bao",
+      "level": 6,
+      "pos": [
+        3,
+        8
+      ],
+      "ai": "guard",
+      "aiParams": {
+        "anchor": [
+          3,
+          8
+        ],
+        "escape": null
+      }
+    }
+  ],
+  "treasures": [
+    {
+      "pos": [
+        6,
+        9
+      ],
+      "itemId": "fire_scroll"
+    },
+    {
+      "pos": [
+        4,
+        9
+      ],
+      "itemId": "long_spear"
+    }
+  ],
+  "events": [
+    {
+      "id": "m2-open",
+      "scope": "battle",
+      "once": true,
+      "trigger": {
+        "type": "battleStart"
+      },
+      "condition": null,
+      "actions": [
+        {
+          "type": "dialogue",
+          "lines": [
+            {
+              "speaker": "유비",
+              "text": "황건적이 저 앞이다. 대오를 지켜라."
+            }
+          ]
+        },
+        {
+          "type": "giveItem",
+          "unit": "guan_yu",
+          "itemId": "herb"
+        }
+      ]
+    },
+    {
+      "id": "m2-duel",
+      "scope": "battle",
+      "once": true,
+      "trigger": {
+        "type": "unitAttacks",
+        "attacker": "guan_yu",
+        "target": "deng_mao"
+      },
+      "condition": null,
+      "actions": [
+        {
+          "type": "duel",
+          "a": "guan_yu",
+          "b": "deng_mao",
+          "outcome": "judge",
+          "loser": "destroyed",
+          "onAWin": [
+            {
+              "type": "dialogue",
+              "lines": [
+                {
+                  "speaker": "관우",
+                  "text": "적장의 목을 베었다."
+                }
+              ]
+            },
+            {
+              "type": "setFlag",
+              "flag": "duel_won"
+            }
+          ],
+          "onBWin": [
+            {
+              "type": "dialogue",
+              "lines": [
+                {
+                  "speaker": "등무",
+                  "text": "관우도 별것 아니군."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-reinforce",
+      "scope": "battle",
+      "once": true,
+      "trigger": {
+        "type": "turnStart",
+        "turn": 3,
+        "fromTurn": null
+      },
+      "condition": null,
+      "actions": [
+        {
+          "type": "dialogue",
+          "lines": [
+            {
+              "speaker": "정탐",
+              "text": "적 증원이 나타났습니다!"
+            }
+          ]
+        },
+        {
+          "type": "setAiProfile",
+          "unit": "cheng_yuanzhi",
+          "profile": "aggressive"
+        },
+        {
+          "type": "changeMorale",
+          "unit": null,
+          "side": "player",
+          "delta": -12
+        }
+      ]
+    },
+    {
+      "id": "m2-highground",
+      "scope": "battle",
+      "once": true,
+      "trigger": {
+        "type": "unitReaches",
+        "unit": "zhang_fei",
+        "area": [
+          6,
+          1,
+          12,
+          3
+        ]
+      },
+      "condition": null,
+      "actions": [
+        {
+          "type": "changeMorale",
+          "unit": null,
+          "side": "player",
+          "delta": 8
+        }
+      ]
+    }
+  ],
+  "victory": {
+    "type": "annihilateEnemies"
+  },
+  "defeat": {
+    "type": "officerLost",
+    "officerIds": [
+      "liu_bei"
+    ]
+  }
+}
