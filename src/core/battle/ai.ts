@@ -259,8 +259,3 @@ export function runAiPhase(ctx: BattleContext, state: BattleState, rng: Rng): Ba
   }
   return events;
 }
-
-/** 지금 이 부대가 노릴 만한 상대. 화면의 하이라이트가 AI와 같은 사거리 규칙을 쓰게 하려고 남겨 둔다. */
-export function reachableTargets(ctx: BattleContext, state: BattleState, unit: Unit): Unit[] {
-  return opponentsOf(state, unit).filter((target) => inAttackRange(ctx, unit, target));
-}

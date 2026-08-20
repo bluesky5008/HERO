@@ -12,6 +12,9 @@ function showError(message: string): void {
   element.style.display = "block";
 }
 
+/** 실행하면 열리는 전장. 편성·스테이지 선택 화면은 M3 범위다. */
+const DEFAULT_STAGE = "stage-m2";
+
 async function boot(): Promise<void> {
   const { data, issues } = loadGameData(readBrowserGameData());
 
@@ -25,7 +28,10 @@ async function boot(): Promise<void> {
     return;
   }
 
-  const stage = data.stages[0];
+  // 어느 전장을 열지 파일 이름 순서에 맡기지 않는다 — 스테이지가 늘면 조용히 바뀐다.
+  // M2 검증 전장이 M2가 더한 규칙을 모두 담고 있어 지금의 기본값이다.
+  // M3에서 캠페인이 이 선택을 대신한다([전체 설계 §8]).
+  const stage = data.stages.find((candidate) => candidate.id === DEFAULT_STAGE) ?? data.stages[0];
   if (!stage) {
     showError("스테이지 데이터가 없다 (data/scenario/stages/).");
     return;
